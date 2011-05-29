@@ -37,6 +37,20 @@ class WhenDocumentClassIsAbstract(BaseDocumentMetaclassNew):
         assert self.returned not in DocumentMetaclass.concrete_classes
 
 
+class WhenDocumentClassHasConnection(BaseDocumentMetaclassNew):
+
+    def setup(self):
+        BaseDocumentMetaclassNew.setup(self)
+        self.attrs['connection'] = Dingus('connection')
+
+        self.returned = DocumentMetaclass.__new__(
+            DocumentMetaclass, self.name,
+            self.bases, self.attrs)
+
+    def should_not_add_to_concrete_classes(self):
+        assert self.returned not in DocumentMetaclass.concrete_classes
+
+
 class WhenDocumentClassIsNotAbstract(BaseDocumentMetaclassNew):
 
     def setup(self):

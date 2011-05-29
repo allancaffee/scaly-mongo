@@ -7,13 +7,16 @@ from scalymongo.schema import SchemaDocument, SchemaMetaclass
 
 class DocumentMetaclass(SchemaMetaclass):
     """This metaclass records all concrete :class:`Document` types.
+
+    This excludes classes created by
+    :meth:`~scalymongo.connection.Connection.connect_document`.
     """
 
     concrete_classes = set()
 
     def __new__(cls, name, bases, attrs):
         rv = SchemaMetaclass.__new__(cls, name, bases, attrs)
-        if not attrs.get('abstract', False):
+        if not attrs.get('abstract', False) and not attrs.get('connection'):
             cls.concrete_classes.add(rv)
         return rv
 
