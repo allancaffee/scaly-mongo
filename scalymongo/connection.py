@@ -49,3 +49,9 @@ class DocumentProxy(object):
         if not cls:
             return None
         return self.connection.connect_document(cls)
+
+    def __iter__(self):
+        """A generator for all models registered on this connection.
+        """
+        for value in self.registered.itervalues():
+            yield self.connection.connect_document(value)

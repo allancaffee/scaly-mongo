@@ -131,3 +131,22 @@ class WhenGettingAttr(BaseDocumentRegistered):
     def setup(self):
         BaseDocumentRegistered.setup(self)
         self.returned = self.document_proxy.Document
+
+
+class WhenIterating(DescribeDocumentProxy):
+
+    def setup(self):
+        DescribeDocumentProxy.setup(self)
+        self.registered  = {'x': Dingus(), 'y': Dingus()}
+        self.document_proxy.registered = self.registered
+        self.returned = [x for x in self.document_proxy]
+
+    def should_return_connected_documents(self):
+        assert self.returned == [
+            self.connection.connect_document(),
+            self.connection.connect_document(),
+        ]
+
+    def should_connect_documents(self):
+        assert self.connection.calls('connect_document', self.registered['x'])
+        assert self.connection.calls('connect_document', self.registered['y'])
