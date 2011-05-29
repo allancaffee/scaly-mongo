@@ -6,13 +6,22 @@ from scalymongo.schema import *
 import scalymongo.schema as mod
 
 
+class DescribeUpdatingListClass(object):
+
+    def should_extend_list(self):
+        assert issubclass(UpdatingList, list)
+
+    def should_implement_update_as_list_extend(self):
+        assert UpdatingList.update is list.extend
+
+
 class DescribeSchemaMetaclassTypeClass(object):
 
     def should_have_structure_as_dict(self):
         assert SchemaMetaclass.mergeable_attrs['structure'] is dict
 
     def should_have_indexes_as_set(self):
-        assert SchemaMetaclass.mergeable_attrs['indexes'] is set
+        assert SchemaMetaclass.mergeable_attrs['indexes'] is UpdatingList
 
     def should_have_required_fields_as_set(self):
         assert SchemaMetaclass.mergeable_attrs['required_fields'] is set
@@ -63,9 +72,9 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
             'structure': {'a_1': str, 'a_2': dict,
                           'b_1': str, 'b_2': dict,
                           'c_1': int, 'c_2': float},
-            'indexes': set([self.base_a.indexes[0],
-                            self.base_b.indexes[0],
-                            self.index]),
+            'indexes': [self.index,
+                        self.base_a.indexes[0],
+                        self.base_b.indexes[0]],
         }
 
 

@@ -1,12 +1,23 @@
 """The base document models.
 """
 
+class UpdatingList(list):
+    """Provide a list with an update method.
+
+    Since dicts are used to describe some attributes they must use a data
+    structure that does not rely on hashing.  This wrapper class just tacks the
+    :meth:`update` method onto a list to make them interoperable with ``set``
+    and ``dict`` instances.
+    """
+    update = list.extend
+
+
 class SchemaMetaclass(type):
     """Metaclass for documents that have a schema."""
 
     mergeable_attrs = {
         'structure': dict,
-        'indexes': set,
+        'indexes': UpdatingList,
         'required_fields': set,
     }
     "Map the merged base class attributes to their expected types."
