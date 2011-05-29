@@ -1,3 +1,5 @@
+import warnings
+
 import pymongo
 
 from scalymongo.document import get_concrete_classes
@@ -30,6 +32,11 @@ class DocumentProxy(object):
         self.connection = connection
         self.registered = {}
         for cls in registered:
+            if cls.__name__ in self.registered:
+                warnings.warn(
+                    'Multiple models have been found with the name {0}.'
+                    ' The result of connection.models[{0}] will be undefined.'
+                    .format(repr(cls.__name__)))
             self.registered[cls.__name__] = cls
 
     def __getitem__(self, name):

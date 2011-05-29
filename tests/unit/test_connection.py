@@ -84,6 +84,23 @@ class DescribeDocumentProxyInit(object):
         }
 
 
+class WhenDocumentProxyInitWithDuplicateClassNames(
+    DingusTestCase(DocumentProxy)):
+
+    def setup(self):
+        super(WhenDocumentProxyInitWithDuplicateClassNames, self).setup()
+        self.connection = Dingus('connection')
+        self.registered = [Dingus(__name__='0'), Dingus(__name__='0')]
+
+        self.returned = DocumentProxy(self.connection, self.registered)
+
+    def should_warn(self):
+        assert mod.warnings.calls(
+            'warn',
+            "Multiple models have been found with the name '0'."
+            " The result of connection.models['0'] will be undefined.")
+
+
 class DescribeDocumentProxy(object):
 
     def setup(self):
