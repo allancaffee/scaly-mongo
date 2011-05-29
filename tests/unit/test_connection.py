@@ -18,6 +18,7 @@ class BaseConnectionTest(DingusTestCase(Connection)):
         # Resetting this back to the old __init__ seems to break
         # DescribeConnectionClass.
         Connection.__init__ = Dingus(return_value=None)
+        Connection.__getitem__ = Dingus('__getitem__')
         self.connection = Connection()
 
 
@@ -26,7 +27,8 @@ class DescribeConnectDocument(BaseConnectionTest):
     def setup(self):
         BaseConnectionTest.setup(self)
         class MyDoc(object):
-            pass
+            __database__ = Dingus()
+            __collection__ = Dingus()
         self.document = MyDoc
 
         self.returned = self.connection.connect_document(self.document)
@@ -36,6 +38,14 @@ class DescribeConnectDocument(BaseConnectionTest):
 
     def should_set_connection_on_returned(self):
         assert self.returned.connection == self.connection
+
+    def should_set_database_on_returned(self):
+        assert self.returned.database == self.connection[
+            self.document.__database__]
+
+    def should_set_collection_on_returned(self):
+        assert self.returned.collection == self.connection[
+            self.document.__database__][self.document.__collection__]
 
 
 class DescribeModelsGetter(BaseConnectionTest):

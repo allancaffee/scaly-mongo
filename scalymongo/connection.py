@@ -6,11 +6,17 @@ from scalymongo.document import get_concrete_classes
 class Connection(pymongo.Connection):
 
     def connect_document(self, document):
-        """Connect a document by injecting this connection into it.
+        """Connect a document by creating a new type and injecting the
+        connection.
         """
-        class _ConnectedDocument(document):
-            connection = self
-        return _ConnectedDocument
+        attrs = {
+            'connection': self,
+            'database': self[document.__database__],
+            'collection': self[document.__database__][document.__collection__],
+        }
+        return type('Connected{0}'.format(document.__name__),
+                    (document,),
+                    attrs)
 
     @property
     def models(self):

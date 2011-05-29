@@ -37,10 +37,13 @@ class Document(SchemaDocument):
         self.validate()
         self.collection.insert(self)
 
-    @property
-    def collection(self):
-        return self.database[self.__collection__]
+    @classmethod
+    def ensure_indexes(cls, **kwargs):
+        """Ensure this any indexes declared on this index :class:`Document`.
 
-    @property
-    def database(self):
-        return self.connection[self.__database__]
+        This is an administrative task and should be done with care as
+        (re)building large indexes can make a database unusable for some time.
+        """
+        for index in cls.indexes:
+            kwargs['unique'] = index.get('unique', False)
+            cls.collection.ensure_index(index['fields'], **kwargs)

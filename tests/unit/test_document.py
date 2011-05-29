@@ -82,8 +82,7 @@ class BaseSaveTest(BaseDocumentTest):
 
     def setup(self):
         BaseDocumentTest.setup(self)
-        self.doc.__collection__ = Dingus('__collection__')
-        self.doc.__database__ = Dingus('__database__')
+        self.doc.collection = Dingus('collection')
         self.doc.validate = Dingus('validate')
 
 
@@ -112,26 +111,41 @@ class WhenDocumentHasNoId(BaseSaveTest):
         assert self.doc.collection.calls('insert', self.doc)
 
 
-class DescribeCollectionGetter(BaseDocumentTest):
+class DescribeEnsureIndexes(object):
 
     def setup(self):
-        BaseDocumentTest.setup(self)
-        self.doc.__collection__ = Dingus('__collection__')
-        self.doc.__database__ = Dingus('__database__')
+        self.index0 = {'fields': Dingus()}
+        self.index1 = {'fields': Dingus()}
+        class MyDoc(Document):
+            collection = Dingus()
+            indexes = [
+                self.index0,
+                self.index1,
+            ]
+        self.MyDoc = MyDoc
+        MyDoc.ensure_indexes()
 
-        self.returned = self.doc.collection
+    def should_ensure_indexes(self):
+        assert self.MyDoc.collection.calls(
+            'ensure_index', self.index0['fields'], unique=False)
+        assert self.MyDoc.collection.calls(
+            'ensure_index', self.index1['fields'], unique=False)
 
-    def should_return_collection_from_database(self):
-        assert self.returned == self.doc.database[self.doc.__collection__]
 
-
-class DescribeDatabaseGetter(BaseDocumentTest):
+class WhenUniqueIndex(object):
 
     def setup(self):
-        BaseDocumentTest.setup(self)
-        self.doc.__database__ = Dingus('__database__')
+        class MyDoc(Document):
+            collection = Dingus()
+            indexes = [
+                {'fields': Dingus(),
+                 'unique': True}
+            ]
+        self.MyDoc = MyDoc
+        MyDoc.ensure_indexes()
 
-        self.returned = self.doc.database
-
-    def should_return_database_from_connection(self):
-        assert self.returned == self.doc.connection[self.doc.__database__]
+    def should_ensure_indexes(self):
+        assert self.MyDoc.collection.calls(
+            'ensure_index',
+            self.MyDoc.indexes[0]['fields'],
+            unique=True)
