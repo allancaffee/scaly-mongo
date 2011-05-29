@@ -22,8 +22,6 @@ class SchemaMetaclass(type):
             for field, type_ in cls.mergeable_attrs.iteritems():
                 if hasattr(base, field):
                     attrs[field].update(getattr(base, field))
-                else:
-                    print base, field
 
         return type.__new__(cls, name, bases, attrs)
 
