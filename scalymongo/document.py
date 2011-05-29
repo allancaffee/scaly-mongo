@@ -50,3 +50,21 @@ class Document(SchemaDocument):
         for index in cls.indexes:
             kwargs['unique'] = index.get('unique', False)
             cls.collection.ensure_index(index['fields'], **kwargs)
+
+    @classmethod
+    def find_one(cls, spec=None, *args, **kwargs):
+        """Find and return one matching document of this type.
+
+        :Parameters:
+
+        - :param:`spec` (optional): Is a query to find the matching document.
+          Note that unlike other tools providing `find_one` scalymongo requires
+          this value to be a dictionary including at a bare minimum the shard
+          key for this models collection.
+
+        - :param:`kwargs` (optional): Additional keyword arguments will be
+          passed to :meth:`pymongo.collection.Collection.find_one`.
+        """
+        doc = cls.collection.find_one(spec, **kwargs)
+        if doc:
+            return cls(doc)

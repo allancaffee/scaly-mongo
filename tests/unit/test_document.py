@@ -163,3 +163,44 @@ class WhenUniqueIndex(object):
             'ensure_index',
             self.MyDoc.indexes[0]['fields'],
             unique=True)
+
+
+class BaseFindOne(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            collection = Dingus()
+        self.MyDoc = MyDoc
+
+
+class WhenFindingOneWithoutSpec(BaseFindOne):
+
+    def setup(self):
+        BaseFindOne.setup(self)
+        self.returned = self.MyDoc.find_one()
+
+    def should_find_one_on_collection(self):
+        assert self.MyDoc.collection.calls('find_one', None)
+
+
+class WhenFindingOneWithSpec(BaseFindOne):
+
+    def setup(self):
+        BaseFindOne.setup(self)
+        self.spec = Dingus()
+        self.returned = self.MyDoc.find_one(self.spec)
+
+    def should_find_one_with_spec(self):
+        assert self.MyDoc.collection.calls('find_one', self.spec)
+
+
+class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
+
+    def setup(self):
+        BaseFindOne.setup(self)
+        self.spec = Dingus()
+        self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
+        self.returned = self.MyDoc.find_one(self.spec, **self.kwargs)
+
+    def should_find_one_with_spec(self):
+        assert self.MyDoc.collection.calls('find_one', self.spec, **self.kwargs)
