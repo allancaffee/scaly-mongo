@@ -172,6 +172,10 @@ class BaseFindOne(object):
             collection = Dingus()
         self.MyDoc = MyDoc
 
+    def should_return_find_one_from_collection(self):
+        assert self.MyDoc.collection.calls('find_one').once()
+        assert self.returned == self.MyDoc.collection.find_one()
+
 
 class WhenFindingOneWithoutSpec(BaseFindOne):
 
@@ -180,7 +184,8 @@ class WhenFindingOneWithoutSpec(BaseFindOne):
         self.returned = self.MyDoc.find_one()
 
     def should_find_one_on_collection(self):
-        assert self.MyDoc.collection.calls('find_one', None)
+        assert self.MyDoc.collection.calls(
+            'find_one', None, as_class=self.MyDoc)
 
 
 class WhenFindingOneWithSpec(BaseFindOne):
@@ -191,7 +196,8 @@ class WhenFindingOneWithSpec(BaseFindOne):
         self.returned = self.MyDoc.find_one(self.spec)
 
     def should_find_one_with_spec(self):
-        assert self.MyDoc.collection.calls('find_one', self.spec)
+        assert self.MyDoc.collection.calls(
+            'find_one', self.spec, as_class=self.MyDoc)
 
 
 class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
@@ -203,4 +209,53 @@ class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
         self.returned = self.MyDoc.find_one(self.spec, **self.kwargs)
 
     def should_find_one_with_spec(self):
-        assert self.MyDoc.collection.calls('find_one', self.spec, **self.kwargs)
+        assert self.MyDoc.collection.calls(
+            'find_one', self.spec, as_class=self.MyDoc, **self.kwargs)
+
+
+class BaseFind(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            collection = Dingus()
+        self.MyDoc = MyDoc
+
+    def should_return_find_from_collection(self):
+        assert self.MyDoc.collection.calls('find').once()
+        assert self.returned == self.MyDoc.collection.find()
+
+
+class WhenFindingWithoutSpec(BaseFind):
+
+    def setup(self):
+        BaseFind.setup(self)
+        self.returned = self.MyDoc.find()
+
+    def should_find_on_collection(self):
+        assert self.MyDoc.collection.calls(
+            'find', None, as_class=self.MyDoc)
+
+
+class WhenFindingWithSpec(BaseFind):
+
+    def setup(self):
+        BaseFind.setup(self)
+        self.spec = Dingus()
+        self.returned = self.MyDoc.find(self.spec)
+
+    def should_find_with_spec(self):
+        assert self.MyDoc.collection.calls(
+            'find', self.spec, as_class=self.MyDoc)
+
+
+class WhenFindingWithSpecAndKeywords(BaseFind):
+
+    def setup(self):
+        BaseFind.setup(self)
+        self.spec = Dingus()
+        self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
+        self.returned = self.MyDoc.find(self.spec, **self.kwargs)
+
+    def should_find_with_spec(self):
+        assert self.MyDoc.collection.calls(
+            'find', self.spec, as_class=self.MyDoc, **self.kwargs)

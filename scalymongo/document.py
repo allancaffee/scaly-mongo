@@ -52,7 +52,7 @@ class Document(SchemaDocument):
             cls.collection.ensure_index(index['fields'], **kwargs)
 
     @classmethod
-    def find_one(cls, spec=None, *args, **kwargs):
+    def find_one(cls, spec=None, **kwargs):
         """Find and return one matching document of this type.
 
         :Parameters:
@@ -65,6 +65,16 @@ class Document(SchemaDocument):
         - :param:`kwargs` (optional): Additional keyword arguments will be
           passed to :meth:`pymongo.collection.Collection.find_one`.
         """
-        doc = cls.collection.find_one(spec, **kwargs)
-        if doc:
-            return cls(doc)
+        kwargs['as_class'] = cls
+        return cls.collection.find_one(spec, **kwargs)
+
+    @classmethod
+    def find(cls, spec=None, *args, **kwargs):
+        """Query the database for documents of this type.
+
+        This is a wrapped call to :meth:`pymongo.collection.Collection.find`
+        which returns document objects of the appropriate class instead of
+        ``dict`` instances.
+        """
+        kwargs['as_class'] = cls
+        return cls.collection.find(spec, *args, **kwargs)
