@@ -2,4 +2,7 @@
 .#*
 .*.swp
 .vagrant
+/*.egg-info
+/build
+/dist
 nosetests.xml
