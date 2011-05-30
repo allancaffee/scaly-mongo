@@ -1,4 +1,4 @@
-from dingus import DingusTestCase, Dingus
+from dingus import DingusTestCase, Dingus, exception_raiser
 from nose.tools import assert_raises
 
 from scalymongo.document import *
@@ -165,12 +165,16 @@ class WhenUniqueIndex(object):
             unique=True)
 
 
-class BaseFindOne(object):
+class BaseDocumentSubclassTest(object):
 
     def setup(self):
         class MyDoc(Document):
-            collection = Dingus()
+            collection = Dingus('collection')
+            database = Dingus('database')
         self.MyDoc = MyDoc
+
+
+class BaseFindOne(BaseDocumentSubclassTest):
 
     def should_return_find_one_from_collection(self):
         assert self.MyDoc.collection.calls('find_one').once()
@@ -181,6 +185,7 @@ class WhenFindingOneWithoutSpec(BaseFindOne):
 
     def setup(self):
         BaseFindOne.setup(self)
+
         self.returned = self.MyDoc.find_one()
 
     def should_find_one_on_collection(self):
@@ -193,6 +198,7 @@ class WhenFindingOneWithSpec(BaseFindOne):
     def setup(self):
         BaseFindOne.setup(self)
         self.spec = Dingus()
+
         self.returned = self.MyDoc.find_one(self.spec)
 
     def should_find_one_with_spec(self):
@@ -206,6 +212,7 @@ class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
         BaseFindOne.setup(self)
         self.spec = Dingus()
         self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
+
         self.returned = self.MyDoc.find_one(self.spec, **self.kwargs)
 
     def should_find_one_with_spec(self):
@@ -213,12 +220,7 @@ class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
             'find_one', self.spec, as_class=self.MyDoc, **self.kwargs)
 
 
-class BaseFind(object):
-
-    def setup(self):
-        class MyDoc(Document):
-            collection = Dingus()
-        self.MyDoc = MyDoc
+class BaseFind(BaseDocumentSubclassTest):
 
     def should_return_find_from_collection(self):
         assert self.MyDoc.collection.calls('find').once()
@@ -241,6 +243,7 @@ class WhenFindingWithSpec(BaseFind):
     def setup(self):
         BaseFind.setup(self)
         self.spec = Dingus()
+
         self.returned = self.MyDoc.find(self.spec)
 
     def should_find_with_spec(self):
@@ -254,8 +257,56 @@ class WhenFindingWithSpecAndKeywords(BaseFind):
         BaseFind.setup(self)
         self.spec = Dingus()
         self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
+
         self.returned = self.MyDoc.find(self.spec, **self.kwargs)
 
     def should_find_with_spec(self):
         assert self.MyDoc.collection.calls(
             'find', self.spec, as_class=self.MyDoc, **self.kwargs)
+
+
+class DescribeFindAndModify(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.query = Dingus('query')
+        self.update = Dingus('update')
+        self.kwargs = {'foo': Dingus('foo'), 'bar': Dingus('bar')}
+
+
+class WhenFindAndModifyWithoutError(DescribeFindAndModify):
+
+    def setup(self):
+        DescribeFindAndModify.setup(self)
+        self.MyDoc.__init__ = Dingus('__init__', return_value=None)
+
+        self.returned = self.MyDoc.find_and_modify(
+            self.query, self.update, **self.kwargs)
+
+    def should_run_findandmodify_command(self):
+        assert self.MyDoc.database.calls(
+            'command', 'findandmodify',
+            self.MyDoc.collection.name, query=self.query, update=self.update,
+            **self.kwargs)
+
+    def should_wrap_result_in_document_type(self):
+        assert self.MyDoc.database.calls('command').once()
+        assert self.MyDoc.__init__.calls(
+            '()', self.MyDoc.database.command()['value'])
+
+    def should_return_new_document(self):
+        assert isinstance(self.returned, self.MyDoc)
+
+
+class WhenFindAndModifyOperationFails(DescribeFindAndModify):
+
+    def setup(self):
+        DescribeFindAndModify.setup(self)
+        self.MyDoc.database.command = exception_raiser(
+            OperationFailure(Dingus()))
+
+        self.returned = self.MyDoc.find_and_modify(
+            self.query, self.update, **self.kwargs)
+
+    def should_return_none(self):
+        assert self.returned is None

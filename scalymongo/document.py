@@ -1,6 +1,8 @@
 """The base document models.
 """
 
+from pymongo.errors import OperationFailure
+
 from scalymongo.errors import UnsafeBehaviorError
 from scalymongo.schema import SchemaDocument, SchemaMetaclass
 
@@ -78,3 +80,35 @@ class Document(SchemaDocument):
         """
         kwargs['as_class'] = cls
         return cls.collection.find(spec, *args, **kwargs)
+
+    @classmethod
+    def find_and_modify(cls, query={}, update=None, **kwargs):
+        """Find and atomically update a single document.
+
+        Note that this method returns *old* (pre-update) version of the document
+        by default.  This is the default for 'findAndModify' in the Mongo shell
+        and it is maintained here for the sake of consistency.  Pass :keyword
+        new: as ``True`` to return the updated document instead.
+
+        :Parameters:
+            - `query`: filter for the update (default ``{}``)
+            - `sort`: priority if multiple objects match (default ``{}``)
+            - `update`: see second argument to :meth:`update` (no default)
+            - `remove`: remove rather than updating (default ``False``)
+            - `new`: return updated rather than original object
+              (default ``False``)
+            - `fields`: see second argument to :meth:`find` (default all)
+            - `upsert`: insert if object doesn't exist (default ``False``)
+            - `**kwargs`: any other options the findAndModify_ command
+              supports can be passed here.
+        """
+        # Use the `command` operation since `find_and_modify` is only available
+        # in pymongo>=1.10.
+        try:
+            returned = cls.database.command(
+                'findandmodify', cls.collection.name,
+                query=query, update=update, **kwargs)
+        except OperationFailure:
+            return None
+
+        return cls(returned['value'])
