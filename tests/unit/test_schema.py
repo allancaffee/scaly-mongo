@@ -75,6 +75,110 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
             'indexes': [self.index,
                         self.base_a.indexes[0],
                         self.base_b.indexes[0]],
+            'shard_index': mod.find_shard_index(),
+        }
+
+
+class BaseFindShardIndex(object):
+    pass
+
+
+class WhenNoShardKeyInIndexes(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'unique': True},
+            {'fields': 'biz',
+             'unique': True},
+        ]
+
+        self.returned = find_shard_index(self.indexes)
+
+    def should_return_none(self):
+        assert self.returned is None
+
+
+class WhenMultipleShardKeysInIndex(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'unique': True,
+             'shard_key': True},
+            {'fields': 'biz',
+             'unique': True,
+             'shard_key': True},
+        ]
+
+    def should_raise_schema_error(self):
+        assert_raises(SchemaError, find_shard_index, self.indexes)
+
+
+class WhenMultipleUniquesWithShardKeysInIndex(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'unique': True},
+            {'fields': 'biz',
+             'unique': True,
+             'shard_key': True},
+        ]
+
+    def should_raise_schema_error(self):
+        assert_raises(SchemaError, find_shard_index, self.indexes)
+
+
+class WhenNonShardKeyIndexIsUnique(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'unique': True},
+            {'fields': 'biz',
+             'shard_key': True},
+        ]
+
+    def should_raise_schema_error(self):
+        assert_raises(SchemaError, find_shard_index, self.indexes)
+
+
+class WhenShardKeyExistsAndIsUnique(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'unique': True,
+             'shard_key': True},
+            {'fields': 'biz'}
+        ]
+
+        self.returned = find_shard_index(self.indexes)
+
+    def should_return_shard_index(self):
+        assert self.returned == {
+            'fields': ['foo', 'bar'],
+            'unique': True,
+            'shard_key': True,
+        }
+
+
+class WhenShardKeyExistsWithNoUniqueIndexes(object):
+
+    def setup(self):
+        self.indexes = [
+            {'fields': ['foo', 'bar'],
+             'shard_key': True},
+            {'fields': 'biz'},
+        ]
+
+        self.returned = find_shard_index(self.indexes)
+
+    def should_return_shard_index(self):
+        assert self.returned == {
+            'fields': ['foo', 'bar'],
+            'shard_key': True,
         }
 
 

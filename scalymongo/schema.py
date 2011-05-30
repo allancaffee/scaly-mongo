@@ -1,6 +1,8 @@
 """The base document models.
 """
 
+from scalymongo.errors import SchemaError
+
 class UpdatingList(list):
     """Provide a list with an update method.
 
@@ -29,12 +31,41 @@ class SchemaMetaclass(type):
             else:
                 attrs[key] = type_()
 
+        attrs['shard_index'] = find_shard_index(attrs['indexes'])
+
         for base in bases:
             for field, type_ in cls.mergeable_attrs.iteritems():
                 if hasattr(base, field):
                     attrs[field].update(getattr(base, field))
 
         return type.__new__(cls, name, bases, attrs)
+
+
+def find_shard_index(indexes):
+    """Find the shard key and validate index properties.
+    """
+    shard_key_indexes = [index for index in indexes
+                         if index.get('shard_key')]
+    if not shard_key_indexes:
+        return None
+
+    if len(shard_key_indexes) > 1:
+        raise SchemaError('There can only be one shard key per collection.')
+
+    shard_index = shard_key_indexes[0]
+
+    unique_indexes = [index for index in indexes if index.get('unique')]
+
+    if len(unique_indexes) > 1:
+        raise SchemaError(
+            'A sharded collection may only have one unique index.')
+
+    if unique_indexes and unique_indexes != shard_key_indexes:
+        raise SchemaError(
+            'Only the shard key may be used as a unique index on'
+            ' a sharded collection.')
+
+    return shard_index
 
 
 class SchemaDocument(dict):
