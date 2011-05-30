@@ -112,3 +112,12 @@ class Document(SchemaDocument):
             return None
 
         return cls(returned['value'])
+
+    @classmethod
+    def update(cls, spec, document, **kwargs):
+        """Update a document matching :param spec: using :param document:.
+
+        :param document: is expected to be either a new document or an update
+        modifier.
+        """
+        return cls.collection.update(spec, document, **kwargs)

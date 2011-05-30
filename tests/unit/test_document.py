@@ -310,3 +310,23 @@ class WhenFindAndModifyOperationFails(DescribeFindAndModify):
 
     def should_return_none(self):
         assert self.returned is None
+
+
+class DescribeUpdate(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.spec = Dingus('spec')
+        self.document = Dingus('document')
+        self.kwargs = {'foo': Dingus('foo'), 'bar': Dingus('bar')}
+
+        self.returned = self.MyDoc.update(
+            self.spec, self.document, **self.kwargs)
+
+    def should_update_collection(self):
+        assert self.MyDoc.collection.calls(
+            'update', self.spec, self.document, **self.kwargs)
+
+    def should_return_result_of_update(self):
+        assert self.MyDoc.collection.call('update').once()
+        assert self.returned == self.MyDoc.collection.update()
