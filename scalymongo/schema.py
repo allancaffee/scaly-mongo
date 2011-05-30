@@ -90,10 +90,23 @@ def validate_structure(fields, structure):
         # Check the recursive case.
         if type(expected_type) is dict:
             validate_structure(value, expected_type)
-        elif not isinstance(value, expected_type):
+        elif not is_field_of_expected_type(value, expected_type):
             raise ValidationError(
-                'Field {0} was expected to be type {1}, but found {2}'
-                .format(repr(field), expected_type, type(value)))
+                'Field {0} was expected to be an instance of {1},'
+                ' but found value {2}'.format(
+                    repr(field),
+                    repr(expected_type),
+                    repr(value)))
+
+
+def is_field_of_expected_type(value, expected_type):
+    """Return ``True`` iff :param value: meets the type description of :param
+    expected_type:.
+
+    For now this is a simple :meth:`isinstance` but at some point we want
+    mongokit style ``IS``, ``OR``, etc validators.
+    """
+    return isinstance(value, expected_type)
 
 
 def validate_required_fields(fields, required):
@@ -104,6 +117,94 @@ def validate_required_fields(fields, required):
         raise ValidationError(
             'Missing required field(s) {0}'.format(
                 ','.join([repr(name) for name in missing])))
+
+
+def validate_update_modifier(spec, structure):
+    """Ensure that all operations are valid for the specified structure.
+    """
+    for modifier, args in spec.iteritems():
+        validate_single_modifier(modifier, args, structure)
+
+
+def validate_single_modifier(modifier, args, structure):
+    """Validate a single update modifier.
+
+    :Parameters:
+    :param modifier: A single update modifier (e.g. ``$set``).
+
+    :param args: The dictionary of arguments provided to the modifier.
+
+    :param structure: The document structure of the document that the
+    modification should be applied to.  This is used to determine whether or not
+    the modification is sane for this document.
+    """
+    if modifier == '$set':
+        return validate_structure(args, structure)
+    if modifier == '$unset':
+        # TODO: Do not allow unsetting required fields or shard_key fields.
+        return
+
+    for field, value in args.iteritems():
+        _validate_field_modifier(modifier, structure[field], value)
+
+
+def _validate_field_modifier(modifier, field_type, value):
+    validator = {
+        '$inc': _validate_inc_modifier,
+        '$push': _validate_push_modifier,
+        '$pushAll': _validate_push_all_modifier,
+        '$addToSet': _validate_add_to_set_modifier,
+    }.get(modifier)
+
+    if not validator:
+        raise ValidationError(
+            'Encountered unknown update modifier {0}'.format(repr(modifier)))
+
+    validator(field_type, value)
+
+
+def _validate_inc_modifier(field_type, value):
+    if field_type not in [int, long, float]:
+        raise ValidationError(
+            'Cannot increment non-numeric field of declared as {0}'.format(
+                repr(field_type)))
+
+
+def _validate_push_modifier(field_type, value):
+    # This is functionally equivalent to _validate_add_to_set_modifier but with
+    # different error messages for clarity.
+    if not isinstance(field_type, list):
+        raise ValidationError(
+            'Cannot push values onto non-array field of {0}'.format(
+                repr(field_type)))
+    array_type = field_type[0]
+    if not is_field_of_expected_type(value, array_type):
+        raise ValidationError(
+            'Cannot push value {0} onto array of {1}'.format(
+                value, repr(array_type)))
+
+
+def _validate_push_all_modifier(field_type, value):
+    if not isinstance(value, list):
+        raise ValidationError(
+            'Cannot use modifier $pushAll with non-array argument {0}'.format(
+                value))
+    for subvalue in value:
+        _validate_push_modifier(field_type, subvalue)
+
+
+def _validate_add_to_set_modifier(field_type, value):
+    # This is functionally equivalent to _validate_push_modifier but with
+    # different error messages for clarity.
+    if not isinstance(field_type, list):
+        raise ValidationError(
+            'Cannot $addToSet values onto non-array field of {0}'.format(
+                repr(field_type)))
+    array_type = field_type[0]
+    if not is_field_of_expected_type(value, array_type):
+        raise ValidationError(
+            'Cannot $addToSet value {0} onto array of {1}'.format(
+                value, repr(array_type)))
 
 
 class ValidationError(Exception):

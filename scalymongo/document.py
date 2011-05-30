@@ -5,7 +5,12 @@ import functools
 from pymongo.errors import OperationFailure
 
 from scalymongo.errors import UnsafeBehaviorError, GlobalQueryException
-from scalymongo.schema import SchemaDocument, SchemaMetaclass
+from scalymongo.helpers import is_update_modifier
+from scalymongo.schema import (
+    SchemaDocument,
+    SchemaMetaclass,
+    validate_update_modifier,
+)
 
 
 class DocumentMetaclass(SchemaMetaclass):
@@ -141,6 +146,10 @@ class Document(SchemaDocument):
         """
         if not allow_global:
             cls.check_query_sharding(spec)
+
+        if is_update_modifier(document):
+            validate_update_modifier(document, cls.structure)
+
         return cls.collection.update(spec, document, **kwargs)
 
     @classmethod

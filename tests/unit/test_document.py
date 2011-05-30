@@ -225,6 +225,9 @@ class BaseDocumentSubclassTest(object):
             database = Dingus('database')
         self.MyDoc = MyDoc
 
+    def teardown(self):
+        pass
+
 
 class BaseFindOne(BaseDocumentSubclassTest):
 
@@ -447,10 +450,29 @@ class BaseUpdate(BaseDocumentSubclassTest):
         assert self.returned == self.MyDoc.collection.update()
 
 
-class WhenNotAllowingGlobalQueries(BaseUpdate):
+class BaseDocumentIsValidUpdateModifier(BaseUpdate):
 
     def setup(self):
         BaseUpdate.setup(self)
+        mod.is_update_modifier = Dingus('is_update_modifier', return_value=True)
+        mod.validate_update_modifier = Dingus('validate_update_modifier')
+
+    def teardown(self):
+        BaseUpdate.teardown(self)
+        reload(mod)
+
+    def should_check_if_is_update_modifier(self):
+        assert mod.is_update_modifier.calls('()', self.document)
+
+    def should_validate_update_modifier(self):
+        assert mod.validate_update_modifier.calls(
+            '()', self.document, self.MyDoc.structure)
+
+
+class WhenNotAllowingGlobalQueries(BaseDocumentIsValidUpdateModifier):
+
+    def setup(self):
+        BaseDocumentIsValidUpdateModifier.setup(self)
         
         self.returned = self.MyDoc.update(
             self.spec, self.document, **self.kwargs)
@@ -459,11 +481,11 @@ class WhenNotAllowingGlobalQueries(BaseUpdate):
         assert self.MyDoc.check_query_sharding.calls('()', self.spec)
 
 
-class WhenAllowingGlobalQueries(BaseUpdate):
+class WhenAllowingGlobalQueries(BaseDocumentIsValidUpdateModifier):
 
     def setup(self):
-        BaseUpdate.setup(self)
-        
+        BaseDocumentIsValidUpdateModifier.setup(self)
+
         self.returned = self.MyDoc.update(
             self.spec, self.document, allow_global=True, **self.kwargs)
 

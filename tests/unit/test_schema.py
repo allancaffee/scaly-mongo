@@ -1,9 +1,27 @@
 # -*- coding: utf-8 -*-
+import datetime
+
 from dingus import Dingus, DingusTestCase, DontCare
 from nose.tools import assert_raises
 
 from scalymongo.schema import *
 import scalymongo.schema as mod
+
+
+def assert_raises_with_message(
+    exception_type, message, function, *args, **kwargs):
+    """Assert that a function raises an exception with :param message: as its
+    message.
+    """
+    try:
+        function(*args, **kwargs)
+    except exception_type as ex:
+        if str(ex) != message:
+            raise AssertionError(
+                'Expected {0} with message of {1}, but message was {2}'
+                .format(exception_type.__name__, repr(message), repr(str(ex))))
+        return
+    raise AssertionError('{0} not raised'.format(exception_type.__name__))
 
 
 class DescribeUpdatingListClass(object):
@@ -204,10 +222,10 @@ class WhenValidating(DescribeSchemaDocument):
             '()', self.document, self.document.required_fields)
 
 
-class DescribeValidateStructure(
-    DingusTestCase(validate_structure, ['ValidationError'])):
+class DescribeValidateStructure(object):
 
-    pass
+    def setup(self):
+        pass
 
 
 class WhenSimpleStructureMatchesSimpleFields(DescribeValidateStructure):
@@ -261,6 +279,9 @@ class WhenSimpleStructureDoesntMatchFields(BaseFailsValidation):
         self.structure = {'int': int, 'float': float, 'str': str}
 
 
+## validate_required_fields ##
+
+
 class DescribeValidateRequiredFields(
     DingusTestCase(validate_required_fields, ['ValidationError'])):
     pass
@@ -301,3 +322,162 @@ class WhenMissingARequiredField(DescribeValidateRequiredFields):
         assert_raises(
             ValidationError,
             validate_required_fields, self.fields, self.required)
+
+
+## validate_update_modifier ##
+
+
+class WhenSettingValidFieldValue(object):
+
+    def should_not_crash(self):
+        validate_update_modifier({'$set': {'field': 1}}, {'field': int})
+
+
+class WhenSettingInvalidFieldValue(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Field 'field' was expected to be an instance of <type 'str'>, but found value 1",
+            validate_update_modifier, {'$set': {'field': 1}}, {'field': str})
+
+
+class WhenUnsettingField(object):
+
+    def should_not_crash(self):
+        validate_update_modifier({'$unset': {'field': 1}}, {'field': int})
+
+
+### $inc modifier ###
+
+
+class WhenIncrementingIntField(object):
+
+    def should_not_crash(self):
+        validate_update_modifier({'$inc': {'field': 1}}, {'field': int})
+
+
+class WhenIncrementingFloatField(object):
+
+    def should_not_crash(self):
+        validate_update_modifier({'$inc': {'field': .5}}, {'field': float})
+
+
+class WhenIncrementingDatetimeField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot increment non-numeric field of declared as <type 'datetime.datetime'>",
+            validate_update_modifier,
+            {'$inc': {'field': 1}},
+            {'field': datetime.datetime})
+
+
+### $push modifier ###
+
+class WhenPushingValidValueToDict(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier({'$push': {'field': 1}}, {'field': [int]})
+
+
+class WhenPushingValueToNonListField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot push values onto non-array field of <type 'int'>",
+            validate_update_modifier, {'$push': {'field': 1}}, {'field': int})
+
+
+class WhenPushingValueOfIncorrectTypeOntoListField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError, "Cannot push value 1 onto array field of type float",
+            validate_update_modifier, {'$push': {'field': 1}}, {'field': [float]})
+
+
+### $pushAll modifier ###
+
+
+class WhenPushAllingValidValue(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier({'$pushAll': {'field': [1, 2]}},
+                                 {'field': [int]})
+
+
+class WhenPushAllingNotListValue(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot use modifier $pushAll with non-array argument 1",
+            validate_update_modifier,
+            {'$pushAll': {'field': 1}},
+            {'field': [int]})
+
+
+class WhenPushAllingArrayOntoNonArrayField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot push values onto non-array field of <type 'int'>",
+            validate_update_modifier,
+            {'$pushAll': {'field': [1]}},
+            {'field': int})
+
+
+class WhenPushAllingArrayContainingBadValue(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot push value 1.1 onto array of <type 'int'>",
+            validate_update_modifier,
+            {'$pushAll': {'field': [1, 1.1]}},
+            {'field': [int]})
+
+
+### $addToSet modifier ###
+
+
+class WhenAddToSetingOntoArray(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier({'$addToSet': {'field': 1}},
+                                 {'field': [int]})
+
+
+class WhenAddToSetingValueToNonListField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot $addToSet values onto non-array field of <type 'int'>",
+            validate_update_modifier, {'$addToSet': {'field': 1}}, {'field': int})
+
+
+class WhenPushingValueOfIncorrectTypeOntoListField(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot $addToSet value 1 onto array of <type 'float'>",
+        validate_update_modifier, {'$addToSet': {'field': 1}}, {'field': [float]})
+
+
+### $unknown modifier ###
+
+
+class WhenUnknownFieldValidatorUsed(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError, "Encountered unknown update modifier '$unknown'",
+            validate_update_modifier,
+            {'$unknown': {'field': 1}},
+            {'field': int})
