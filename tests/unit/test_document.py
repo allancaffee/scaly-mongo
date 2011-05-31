@@ -125,6 +125,57 @@ class WhenDocumentHasNoId(BaseSaveTest):
         assert self.doc.collection.calls('insert', self.doc)
 
 
+class WhenReloadingDocumentWithoutShardKey(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {
+                'foo': int,
+                'bar': basestring,
+                'biz': float,
+            }
+        self.MyDoc = MyDoc
+        self.doc = self.MyDoc({'_id': Dingus('_id'),
+                               'foo': 1, 'bar': 'moo', 'biz': 3.3})
+        self.doc.find_one = Dingus(
+            'find_one', return_value={'foo': 1, 'bar': 'moo', 'biz': 5.5})
+
+        self.doc.reload()
+
+    def should_set_biz_to_5_point_5(self):
+        assert self.doc['biz'] == 5.5
+
+    def should_find_one_using_just_id(self):
+        assert self.doc.find_one.calls(
+            '()', {'_id': self.doc['_id']})
+
+
+class WhenReloadingDocumentWithShardKey(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {
+                'foo': int,
+                'bar': basestring,
+                'biz': float,
+            }
+            indexes = [
+                {'fields': ['foo', 'bar'],
+                 'shard_key': True}
+            ]
+        self.MyDoc = MyDoc
+        self.doc = self.MyDoc({'_id': Dingus('_id'),
+                               'foo': 1, 'bar': 'moo', 'biz': 3.3})
+        self.doc.find_one = Dingus(
+            'find_one', return_value={'foo': 1, 'bar': 'moo', 'biz': 5.5})
+
+        self.doc.reload()
+
+    def should_find_one_using_shard_key(self):
+        assert self.doc.find_one.calls(
+            '()', {'_id': self.doc['_id'], 'foo': 1, 'bar': 'moo'})
+
+
 class DescribeEnsureIndexes(object):
 
     def setup(self):
@@ -330,3 +381,40 @@ class DescribeUpdate(BaseDocumentSubclassTest):
     def should_return_result_of_update(self):
         assert self.MyDoc.collection.call('update').once()
         assert self.returned == self.MyDoc.collection.update()
+
+
+class BaseShardKeyGetterTest(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.doc = self.MyDoc({
+            'foo': Dingus('foo'),
+            'bar': Dingus('bar'),
+            'biz': Dingus('biz')
+        })
+
+
+class WhenShardKeyNotSet(BaseShardKeyGetterTest):
+
+    def setup(self):
+        BaseShardKeyGetterTest.setup(self)
+
+        self.returned = self.doc.shard_key
+
+    def should_return_empty_dict(self):
+        assert self.returned == {}
+
+
+class WhenShardKeyIsSet(BaseShardKeyGetterTest):
+
+    def setup(self):
+        BaseShardKeyGetterTest.setup(self)
+        self.MyDoc.shard_index = {
+            'fields': ['foo', 'bar'],
+            'shard_key': True,
+        }
+
+        self.returned = self.doc.shard_key
+
+    def should_return_shard_keys_with_values(self):
+        assert self.returned == {'foo': self.doc['foo'], 'bar': self.doc['bar']}

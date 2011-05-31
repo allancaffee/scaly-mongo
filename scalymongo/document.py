@@ -42,6 +42,17 @@ class Document(SchemaDocument):
         self.validate()
         self.collection.insert(self)
 
+    def reload(self):
+        """Reload this document.
+
+        Make use of the shard key for sharded collections to avoid a gloabl
+        query.
+        """
+        spec = self.shard_key
+        spec['_id'] = self['_id']
+        # Call the parent `update` not the classmethod.
+        SchemaDocument.update(self, self.find_one(spec))
+
     @classmethod
     def ensure_indexes(cls, **kwargs):
         """Ensure this any indexes declared on this index :class:`Document`.
@@ -121,3 +132,12 @@ class Document(SchemaDocument):
         modifier.
         """
         return cls.collection.update(spec, document, **kwargs)
+
+    @property
+    def shard_key(self):
+        if not self.shard_index:
+            return {}
+        key_dict = {}
+        for key in self.shard_index['fields']:
+            key_dict[key] = self[key]
+        return key_dict
