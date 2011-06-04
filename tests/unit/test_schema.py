@@ -470,6 +470,50 @@ class WhenPushingValueOfIncorrectTypeOntoListField(object):
         validate_update_modifier, {'$addToSet': {'field': 1}}, {'field': [float]})
 
 
+### $pop modifier ###
+
+
+class WhenPoppingFromArrayField(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$pop': {'field': 1}},
+            {'field': [int]})
+
+
+### $pull modifier ###
+
+
+class WhenPullingFromArrayField(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$pull': {'field': 4}},
+            {'field': [int]})
+
+
+### $pull modifier ###
+
+
+class WhenPullAllingFromArrayField(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$pullAll': {'field': [4, 5]}},
+            {'field': [int]})
+
+
+### $bit modifier ###
+
+
+class WhenBitModifyingIntField(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$bit': {'field': {'and': 5}}},
+            {'field': int})
+
+
 ### $rename modifier ###
 
 

@@ -160,11 +160,20 @@ def _validate_field_rename(old_name, new_name, structure):
 
 
 def _validate_field_modifier(modifier, field_type, value):
+    # Since $pop, $pull, $pullAll and $bit cannot be used to break a schema
+    # (i.e. they can't change the type or add data) adding validation for their
+    # content is not a priority.  Perhaps at some point they'll be validated,
+    # but for now just let them pass.
+    null_validator = lambda field, value: None
     validator = {
         '$inc': _validate_inc_modifier,
         '$push': _validate_push_modifier,
         '$pushAll': _validate_push_all_modifier,
         '$addToSet': _validate_add_to_set_modifier,
+        '$pop': null_validator,
+        '$pull': null_validator,
+        '$pullAll': null_validator,
+        '$bit': null_validator,
     }.get(modifier)
 
     if not validator:
