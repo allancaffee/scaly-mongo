@@ -8,3 +8,7 @@ class GlobalQueryException(Exception):
 
 class SchemaError(ValueError):
     pass
+
+
+class ValidationError(Exception):
+    pass

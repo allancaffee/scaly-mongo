@@ -5,24 +5,8 @@ from dingus import Dingus, DingusTestCase, DontCare
 from nose.tools import assert_raises
 
 from scalymongo.schema import *
+from tests.helpers import assert_raises_with_message
 import scalymongo.schema as mod
-
-
-def assert_raises_with_message(
-    exception_type, message, function, *args, **kwargs):
-    """Assert that a function raises an exception with :param message: as its
-    message.
-    """
-    try:
-        function(*args, **kwargs)
-    except exception_type as ex:
-        if str(ex) != message:
-            raise AssertionError(
-                'Expected {0} with message of {1}, but message was {2}'
-                .format(exception_type.__name__, repr(message), repr(str(ex))))
-        return
-    raise AssertionError('{0} not raised'.format(exception_type.__name__))
-
 
 class DescribeUpdatingListClass(object):
 
@@ -222,61 +206,84 @@ class WhenValidating(DescribeSchemaDocument):
             '()', self.document, self.document.required_fields)
 
 
-class DescribeValidateStructure(object):
+## validate_structure ##
+
+
+class DescribeValidateStructure(DingusTestCase(validate_structure)):
 
     def setup(self):
-        pass
+        super(DescribeValidateStructure, self).setup()
+        self.body = Dingus()
+        self.structure = Dingus()
+        validate_structure(self.body, self.structure)
+
+    def should_create_structure_walker_with_validate_single_field(self):
+        assert mod.StructureWalker.calls('()', mod.validate_single_field)
+        assert mod.StructureWalker.calls('()').once()
+
+    def should_validate_document_using_walker(self):
+        assert mod.StructureWalker().calls(
+            'walk_dict', self.body, self.structure)
 
 
-class WhenSimpleStructureMatchesSimpleFields(DescribeValidateStructure):
+## validate_single_field ##
+
+
+class DescribeValidateSingleField(
+    DingusTestCase(validate_single_field, ['ValidationError'])):
 
     def setup(self):
-        DescribeValidateStructure.setup(self)
-        self.fields = {'int': 5, 'float': 3.5, 'str': 'string', 'dict': {}}
-        self.structure = {'int': int, 'float': float, 'str': str, 'dict': dict}
-        validate_structure(self.fields, self.structure)
+        super(DescribeValidateSingleField, self).setup()
+        self.path = Dingus('path')
+        self.value = Dingus('value')
+        self.expected_type = Dingus('expected_type')
+
+
+class WhenFieldIsExpectedType(DescribeValidateSingleField):
+
+    def setup(self):
+        DescribeValidateSingleField.setup(self)
+        mod.is_field_of_expected_type.return_value = True
 
     def should_not_crash(self):
-        pass
+        validate_single_field(self.path, self.value, self.expected_type)
 
 
-class WhenStructureHasEmbeddedDict(DescribeValidateStructure):
-
-    def setup(self):
-        DescribeValidateStructure.setup(self)
-        self.embedded_fields = {'a': Dingus(), 'b': Dingus()}
-        self.embedded_structure = {'a': Dingus(), 'b': Dingus()}
-        self.fields = {'int': 5, 'embedded': self.embedded_fields}
-        self.structure = {'int': int, 'embedded': self.embedded_structure}
-        mod.validate_structure = Dingus('validate_structure')
-        validate_structure(self.fields, self.structure)
-
-    def should_recurse_into_embedded_dicts(self):
-        assert mod.validate_structure.calls(
-            '()', self.embedded_fields, self.embedded_structure)
-
-
-class BaseFailsValidation(DescribeValidateStructure):
-
-    def should_fail_validation(self):
-        assert_raises(ValidationError,
-                      validate_structure, self.fields, self.structure)
-
-
-class WhenFieldsExistButNotInStructure(BaseFailsValidation):
+class WhenFieldIsNotExpectedType(DescribeValidateSingleField):
 
     def setup(self):
-        BaseFailsValidation.setup(self)
-        self.fields = {'field': Dingus()}
-        self.structure = {}
+        DescribeValidateSingleField.setup(self)
+        mod.is_field_of_expected_type.return_value = False
+
+    def should_not_crash(self):
+        assert_raises_with_message(
+            ValidationError,
+            'Position <Dingus path> was declared to be <Dingus expected_type>, but encountered value <Dingus value>',
+            validate_single_field, self.path, self.value, self.expected_type)
 
 
-class WhenSimpleStructureDoesntMatchFields(BaseFailsValidation):
+## is_field_of_expected_type ##
+
+
+class DescribeIsFieldOfExpectedType(object):
 
     def setup(self):
-        BaseFailsValidation.setup(self)
-        self.fields = {'int': Dingus(), 'float': 3.5, 'str': 'string'}
-        self.structure = {'int': int, 'float': float, 'str': str}
+        mod.isinstance = Dingus('isinstance')
+        self.value = Dingus()
+        self.expected_type = Dingus()
+
+        self.returned = is_field_of_expected_type(
+            self.value, self.expected_type)
+
+    def teardown(self):
+        del mod.isinstance
+
+    def should_call_isinstance_with_value_and_expected_type(self):
+        assert mod.isinstance.calls('()', self.value, self.expected_type)
+
+    def should_return_result_of_isinstance(self):
+        assert mod.isinstance.calls('()').once()
+        assert self.returned == mod.isinstance()
 
 
 ## validate_required_fields ##
@@ -338,7 +345,7 @@ class WhenSettingInvalidFieldValue(object):
     def should_raise_validation_error(self):
         assert_raises_with_message(
             ValidationError,
-            "Field 'field' was expected to be an instance of <type 'str'>, but found value 1",
+            "Position 'field' was declared to be <type 'str'>, but encountered value 1",
             validate_update_modifier, {'$set': {'field': 1}}, {'field': str})
 
 

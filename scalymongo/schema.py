@@ -1,7 +1,9 @@
 """The base document models.
 """
 
-from scalymongo.errors import SchemaError
+from scalymongo.errors import SchemaError, ValidationError
+from scalymongo.structure_walker import StructureWalker
+
 
 class UpdatingList(list):
     """Provide a list with an update method.
@@ -78,25 +80,20 @@ class SchemaDocument(dict):
         validate_required_fields(self, self.required_fields)
 
 
-def validate_structure(fields, structure):
-    """Recursively validate the structure of a :class:`dict`."""
-    for field, value in fields.iteritems():
-        if field not in structure:
-            raise ValidationError(
-                'Encountered unknown field {0}'.format(field))
+def validate_structure(body, structure):
+    StructureWalker(validate_single_field).walk_dict(body, structure)
 
-        expected_type = structure[field]
 
-        # Check the recursive case.
-        if type(expected_type) is dict:
-            validate_structure(value, expected_type)
-        elif not is_field_of_expected_type(value, expected_type):
-            raise ValidationError(
-                'Field {0} was expected to be an instance of {1},'
-                ' but found value {2}'.format(
-                    repr(field),
-                    repr(expected_type),
-                    repr(value)))
+def validate_single_field(path, value, expected_type):
+    """Validate a single field's value.
+
+    This is the callback validator used by the :meth validate_structure: to
+    check individual field values.
+    """
+    if not is_field_of_expected_type(value, expected_type):
+        raise ValidationError(
+            "Position {0} was declared to be {1}, but encountered value {2}"
+            .format(repr(path), expected_type, value))
 
 
 def is_field_of_expected_type(value, expected_type):
@@ -219,7 +216,3 @@ def _validate_push_all_modifier(field_type, value):
                 value))
     for subvalue in value:
         _validate_push_modifier(field_type, subvalue)
-
-
-class ValidationError(Exception):
-    pass
