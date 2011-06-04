@@ -170,18 +170,26 @@ def _validate_inc_modifier(field_type, value):
                 repr(field_type)))
 
 
-def _validate_push_modifier(field_type, value):
-    # This is functionally equivalent to _validate_add_to_set_modifier but with
-    # different error messages for clarity.
-    if not isinstance(field_type, list):
-        raise ValidationError(
-            'Cannot push values onto non-array field of {0}'.format(
-                repr(field_type)))
-    array_type = field_type[0]
-    if not is_field_of_expected_type(value, array_type):
-        raise ValidationError(
-            'Cannot push value {0} onto array of {1}'.format(
-                value, repr(array_type)))
+def _make_single_value_array_modifier_validator(action_name):
+    """Make and return a closure that is a validator for modifiers that add a
+    single element to arrays.  I.e $push and $addToSet.
+    """
+    def _validator(field_type, value):
+        if not isinstance(field_type, list):
+            raise ValidationError(
+                'Cannot {0} values onto non-array field of {1}'.format(
+                    action_name, repr(field_type)))
+
+        array_type = field_type[0]
+        if not is_field_of_expected_type(value, array_type):
+            raise ValidationError(
+                'Cannot {0} value {1} onto array of {2}'.format(
+                    action_name, repr(value), repr(array_type)))
+    return _validator
+
+
+_validate_push_modifier = _make_single_value_array_modifier_validator('push')
+_validate_add_to_set_modifier = _make_single_value_array_modifier_validator('$addToSet')
 
 
 def _validate_push_all_modifier(field_type, value):
@@ -191,20 +199,6 @@ def _validate_push_all_modifier(field_type, value):
                 value))
     for subvalue in value:
         _validate_push_modifier(field_type, subvalue)
-
-
-def _validate_add_to_set_modifier(field_type, value):
-    # This is functionally equivalent to _validate_push_modifier but with
-    # different error messages for clarity.
-    if not isinstance(field_type, list):
-        raise ValidationError(
-            'Cannot $addToSet values onto non-array field of {0}'.format(
-                repr(field_type)))
-    array_type = field_type[0]
-    if not is_field_of_expected_type(value, array_type):
-        raise ValidationError(
-            'Cannot $addToSet value {0} onto array of {1}'.format(
-                value, repr(array_type)))
 
 
 class ValidationError(Exception):
