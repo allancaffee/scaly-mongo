@@ -143,9 +143,20 @@ def validate_single_modifier(modifier, args, structure):
     if modifier == '$unset':
         # TODO: Do not allow unsetting required fields or shard_key fields.
         return
+    if modifier == '$rename':
+        for old_name, new_name in args.iteritems():
+            _validate_field_rename(old_name, new_name, structure)
+        return
 
     for field, value in args.iteritems():
         _validate_field_modifier(modifier, structure[field], value)
+
+
+def _validate_field_rename(old_name, new_name, structure):
+    if structure[old_name] != structure[new_name]:
+        raise ValidationError(
+            'Cannot rename field of type {0} to field of type {1}'.format(
+                repr(structure[old_name]), repr(structure[new_name])))
 
 
 def _validate_field_modifier(modifier, field_type, value):

@@ -470,6 +470,27 @@ class WhenPushingValueOfIncorrectTypeOntoListField(object):
         validate_update_modifier, {'$addToSet': {'field': 1}}, {'field': [float]})
 
 
+### $rename modifier ###
+
+
+class WhenRenamingFieldToOneWithIdenticalType(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$rename': {'old_field': 'new_field'}},
+            {'old_field': [int], 'new_field': [int]})
+
+
+class WhenRenamingFieldToOneWithDifferentType(object):
+
+    def should_raise_validation_error(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot rename field of type [<type 'int'>] to field of type [<type 'float'>]",
+            validate_update_modifier,
+            {'$rename': {'old_field': 'new_field'}},
+            {'old_field': [int], 'new_field': [float]})
+
 ### $unknown modifier ###
 
 
