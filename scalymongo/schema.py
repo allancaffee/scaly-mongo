@@ -31,12 +31,12 @@ class SchemaMetaclass(type):
             else:
                 attrs[key] = type_()
 
-        attrs['shard_index'] = find_shard_index(attrs['indexes'])
-
         for base in bases:
             for field, type_ in cls.mergeable_attrs.iteritems():
                 if hasattr(base, field):
                     attrs[field].update(getattr(base, field))
+
+        attrs['shard_index'] = find_shard_index(attrs['indexes'])
 
         return type.__new__(cls, name, bases, attrs)
 

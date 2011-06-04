@@ -1,9 +1,10 @@
 """The base document models.
 """
+import functools
 
 from pymongo.errors import OperationFailure
 
-from scalymongo.errors import UnsafeBehaviorError
+from scalymongo.errors import UnsafeBehaviorError, GlobalQueryException
 from scalymongo.schema import SchemaDocument, SchemaMetaclass
 
 
@@ -65,7 +66,7 @@ class Document(SchemaDocument):
             cls.collection.ensure_index(index['fields'], **kwargs)
 
     @classmethod
-    def find_one(cls, spec=None, **kwargs):
+    def find_one(cls, spec=None, allow_global=False, **kwargs):
         """Find and return one matching document of this type.
 
         :Parameters:
@@ -79,10 +80,12 @@ class Document(SchemaDocument):
           passed to :meth:`pymongo.collection.Collection.find_one`.
         """
         kwargs['as_class'] = cls
+        if not allow_global:
+            cls.check_query_sharding(spec)
         return cls.collection.find_one(spec, **kwargs)
 
     @classmethod
-    def find(cls, spec=None, *args, **kwargs):
+    def find(cls, spec=None, allow_global=False, *args, **kwargs):
         """Query the database for documents of this type.
 
         This is a wrapped call to :meth:`pymongo.collection.Collection.find`
@@ -90,10 +93,13 @@ class Document(SchemaDocument):
         ``dict`` instances.
         """
         kwargs['as_class'] = cls
+        if not allow_global:
+            cls.check_query_sharding(spec)
         return cls.collection.find(spec, *args, **kwargs)
 
     @classmethod
-    def find_and_modify(cls, query={}, update=None, **kwargs):
+    def find_and_modify(cls, query={}, update=None,
+                        allow_global=False, **kwargs):
         """Find and atomically update a single document.
 
         Note that this method returns *old* (pre-update) version of the document
@@ -113,9 +119,11 @@ class Document(SchemaDocument):
             - `**kwargs`: any other options the findAndModify_ command
               supports can be passed here.
         """
-        # Use the `command` operation since `find_and_modify` is only available
-        # in pymongo>=1.10.
+        if not allow_global:
+            cls.check_query_sharding(query)
         try:
+            # Use the `command` operation since `find_and_modify` is only
+            # available in pymongo>=1.10.
             returned = cls.database.command(
                 'findandmodify', cls.collection.name,
                 query=query, update=update, **kwargs)
@@ -125,13 +133,31 @@ class Document(SchemaDocument):
         return cls(returned['value'])
 
     @classmethod
-    def update(cls, spec, document, **kwargs):
+    def update(cls, spec, document, allow_global=False, **kwargs):
         """Update a document matching :param spec: using :param document:.
 
         :param document: is expected to be either a new document or an update
         modifier.
         """
+        if not allow_global:
+            cls.check_query_sharding(spec)
         return cls.collection.update(spec, document, **kwargs)
+
+    @classmethod
+    def check_query_sharding(cls, spec):
+        """Check that all required keys are present in :param spec:.
+
+        If any shard keys are unspecified this will raise a
+        :class:`GlobalQueryException`.
+        """
+        if cls.shard_index:
+            keys = set(cls.shard_index['fields'])
+            missing_keys = keys.difference(spec.keys())
+            if missing_keys:
+                raise GlobalQueryException(
+                    'Some or all of the shard key was not specified.  Missing'
+                    ' fields were {0}.'.format(
+                        ', '.join([key for key in missing_keys])))
 
     @property
     def shard_key(self):

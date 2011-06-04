@@ -2,6 +2,7 @@ from dingus import DingusTestCase, Dingus, exception_raiser
 from nose.tools import assert_raises
 
 from scalymongo.document import *
+from scalymongo.errors import GlobalQueryException
 import scalymongo.document as mod
 
 
@@ -227,15 +228,26 @@ class BaseDocumentSubclassTest(object):
 
 class BaseFindOne(BaseDocumentSubclassTest):
 
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
+
     def should_return_find_one_from_collection(self):
         assert self.MyDoc.collection.calls('find_one').once()
         assert self.returned == self.MyDoc.collection.find_one()
 
 
-class WhenFindingOneWithoutSpec(BaseFindOne):
+class BaseFindOneWithoutGlobalQuery(BaseFindOne):
+
+    def should_check_query_sharding(self):
+        assert self.MyDoc.check_query_sharding.calls('()', self.spec)
+
+
+class WhenFindingOneWithoutSpec(BaseFindOneWithoutGlobalQuery):
 
     def setup(self):
-        BaseFindOne.setup(self)
+        BaseFindOneWithoutGlobalQuery.setup(self)
+        self.spec = None
 
         self.returned = self.MyDoc.find_one()
 
@@ -244,10 +256,10 @@ class WhenFindingOneWithoutSpec(BaseFindOne):
             'find_one', None, as_class=self.MyDoc)
 
 
-class WhenFindingOneWithSpec(BaseFindOne):
+class WhenFindingOneWithSpec(BaseFindOneWithoutGlobalQuery):
 
     def setup(self):
-        BaseFindOne.setup(self)
+        BaseFindOneWithoutGlobalQuery.setup(self)
         self.spec = Dingus()
 
         self.returned = self.MyDoc.find_one(self.spec)
@@ -257,10 +269,10 @@ class WhenFindingOneWithSpec(BaseFindOne):
             'find_one', self.spec, as_class=self.MyDoc)
 
 
-class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
+class WhenFindingOneWithSpecAndKeywords(BaseFindOneWithoutGlobalQuery):
 
     def setup(self):
-        BaseFindOne.setup(self)
+        BaseFindOneWithoutGlobalQuery.setup(self)
         self.spec = Dingus()
         self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
 
@@ -271,17 +283,41 @@ class WhenFindingOneWithSpecAndKeywords(BaseFindOne):
             'find_one', self.spec, as_class=self.MyDoc, **self.kwargs)
 
 
+class WhenFindingOneAndAllowingGlobal(BaseFindOne):
+
+    def setup(self):
+        BaseFindOne.setup(self)
+        self.spec = Dingus()
+
+        self.returned = self.MyDoc.find_one(self.spec, allow_global=True)
+
+    def should_not_check_query(self):
+        assert not self.MyDoc.check_query_sharding.calls('()')
+
+
 class BaseFind(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
 
     def should_return_find_from_collection(self):
         assert self.MyDoc.collection.calls('find').once()
         assert self.returned == self.MyDoc.collection.find()
 
 
-class WhenFindingWithoutSpec(BaseFind):
+class BaseFindWithoutGlobalQuery(BaseFind):
+
+    def should_check_query_sharding(self):
+        assert self.MyDoc.check_query_sharding.calls('()', self.spec)
+
+
+class WhenFindingWithoutSpec(BaseFindWithoutGlobalQuery):
 
     def setup(self):
-        BaseFind.setup(self)
+        BaseFindWithoutGlobalQuery.setup(self)
+        self.spec = None
+
         self.returned = self.MyDoc.find()
 
     def should_find_on_collection(self):
@@ -289,10 +325,10 @@ class WhenFindingWithoutSpec(BaseFind):
             'find', None, as_class=self.MyDoc)
 
 
-class WhenFindingWithSpec(BaseFind):
+class WhenFindingWithSpec(BaseFindWithoutGlobalQuery):
 
     def setup(self):
-        BaseFind.setup(self)
+        BaseFindWithoutGlobalQuery.setup(self)
         self.spec = Dingus()
 
         self.returned = self.MyDoc.find(self.spec)
@@ -302,10 +338,10 @@ class WhenFindingWithSpec(BaseFind):
             'find', self.spec, as_class=self.MyDoc)
 
 
-class WhenFindingWithSpecAndKeywords(BaseFind):
+class WhenFindingWithSpecAndKeywords(BaseFindWithoutGlobalQuery):
 
     def setup(self):
-        BaseFind.setup(self)
+        BaseFindWithoutGlobalQuery.setup(self)
         self.spec = Dingus()
         self.kwargs = {'foo': Dingus(), 'bar': Dingus()}
 
@@ -316,6 +352,18 @@ class WhenFindingWithSpecAndKeywords(BaseFind):
             'find', self.spec, as_class=self.MyDoc, **self.kwargs)
 
 
+class WhenFindingAndAllowingGlobal(BaseFind):
+
+    def setup(self):
+        BaseFind.setup(self)
+        self.spec = Dingus()
+
+        self.returned = self.MyDoc.find(self.spec, allow_global=True)
+
+    def should_not_check_query(self):
+        assert not self.MyDoc.check_query_sharding.calls('()')
+
+
 class DescribeFindAndModify(BaseDocumentSubclassTest):
 
     def setup(self):
@@ -323,12 +371,19 @@ class DescribeFindAndModify(BaseDocumentSubclassTest):
         self.query = Dingus('query')
         self.update = Dingus('update')
         self.kwargs = {'foo': Dingus('foo'), 'bar': Dingus('bar')}
+        self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
 
 
-class WhenFindAndModifyWithoutError(DescribeFindAndModify):
+class BaseFindAndModifyWithoutGlobalQuery(DescribeFindAndModify):
+
+    def should_check_query_sharding(self):
+        assert self.MyDoc.check_query_sharding.calls('()', self.query)
+
+
+class WhenFindAndModifyWithoutError(BaseFindAndModifyWithoutGlobalQuery):
 
     def setup(self):
-        DescribeFindAndModify.setup(self)
+        BaseFindAndModifyWithoutGlobalQuery.setup(self)
         self.MyDoc.__init__ = Dingus('__init__', return_value=None)
 
         self.returned = self.MyDoc.find_and_modify(
@@ -349,10 +404,10 @@ class WhenFindAndModifyWithoutError(DescribeFindAndModify):
         assert isinstance(self.returned, self.MyDoc)
 
 
-class WhenFindAndModifyOperationFails(DescribeFindAndModify):
+class WhenFindAndModifyOperationFails(BaseFindAndModifyWithoutGlobalQuery):
 
     def setup(self):
-        DescribeFindAndModify.setup(self)
+        BaseFindAndModifyWithoutGlobalQuery.setup(self)
         self.MyDoc.database.command = exception_raiser(
             OperationFailure(Dingus()))
 
@@ -363,16 +418,25 @@ class WhenFindAndModifyOperationFails(DescribeFindAndModify):
         assert self.returned is None
 
 
-class DescribeUpdate(BaseDocumentSubclassTest):
+class WhenFindAndModifyAllowingGlobal(DescribeFindAndModify):
+
+    def setup(self):
+        DescribeFindAndModify.setup(self)
+        self.MyDoc.find_and_modify(
+            self.query, self.update, allow_global=True, **self.kwargs)
+
+    def should_not_check_query_sharding(self):
+        assert not self.MyDoc.check_query_sharding.calls('()')
+
+
+class BaseUpdate(BaseDocumentSubclassTest):
 
     def setup(self):
         BaseDocumentSubclassTest.setup(self)
         self.spec = Dingus('spec')
         self.document = Dingus('document')
         self.kwargs = {'foo': Dingus('foo'), 'bar': Dingus('bar')}
-
-        self.returned = self.MyDoc.update(
-            self.spec, self.document, **self.kwargs)
+        self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
 
     def should_update_collection(self):
         assert self.MyDoc.collection.calls(
@@ -381,6 +445,68 @@ class DescribeUpdate(BaseDocumentSubclassTest):
     def should_return_result_of_update(self):
         assert self.MyDoc.collection.call('update').once()
         assert self.returned == self.MyDoc.collection.update()
+
+
+class WhenNotAllowingGlobalQueries(BaseUpdate):
+
+    def setup(self):
+        BaseUpdate.setup(self)
+        
+        self.returned = self.MyDoc.update(
+            self.spec, self.document, **self.kwargs)
+
+    def should_check_query_sharding(self):
+        assert self.MyDoc.check_query_sharding.calls('()', self.spec)
+
+
+class WhenAllowingGlobalQueries(BaseUpdate):
+
+    def setup(self):
+        BaseUpdate.setup(self)
+        
+        self.returned = self.MyDoc.update(
+            self.spec, self.document, allow_global=True, **self.kwargs)
+
+    def should_check_query_sharding(self):
+        assert not self.MyDoc.check_query_sharding.calls('()')
+
+
+class WhenCheckingQuerySharding(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.shard_index = {'fields': ['foo', 'bar']}
+        self.spec = {'foo': Dingus(), 'bar': Dingus()}
+
+        self.MyDoc.check_query_sharding(self.spec)
+
+    def should_not_crash(self):
+        pass
+
+
+class WhenShardIndexNotSpecified(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.shard_index = None
+        self.spec = {'foo': Dingus(), 'bar': Dingus()}
+
+        self.MyDoc.check_query_sharding(self.spec)
+
+    def should_not_crash(self):
+        pass
+
+
+class WhenShardIndexNotSpecified(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.shard_index = {'fields': ['biz']}
+        self.spec = {'foo': Dingus()}
+
+    def should_raise_global_query_exception(self):
+        assert_raises(
+            GlobalQueryException, self.MyDoc.check_query_sharding, self.spec)
 
 
 class BaseShardKeyGetterTest(BaseDocumentSubclassTest):
