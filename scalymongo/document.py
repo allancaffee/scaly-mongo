@@ -149,6 +149,9 @@ class Document(SchemaDocument):
 
         if is_update_modifier(document):
             validate_update_modifier(document, cls.structure)
+        else:
+            # It's a full document replace.
+            cls(document).validate()
 
         return cls.collection.update(spec, document, **kwargs)
 

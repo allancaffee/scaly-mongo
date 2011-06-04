@@ -493,6 +493,23 @@ class WhenAllowingGlobalQueries(BaseDocumentIsValidUpdateModifier):
         assert not self.MyDoc.check_query_sharding.calls('()')
 
 
+class WhenMakingFullDocumentUpdate(BaseUpdate):
+
+    def setup(self):
+        BaseUpdate.setup(self)
+        mod.is_update_modifier = Dingus('is_update_modifier', return_value=False)
+        self.MyDoc.__init__ = Dingus('__init__', return_value=None)
+        self.MyDoc.validate = Dingus('validate')
+        self.returned = self.MyDoc.update(
+            self.spec, self.document, allow_global=True, **self.kwargs)
+
+    def should_validate_new_value(self):
+        assert self.MyDoc.validate.calls('()')
+
+    def should_create_new_MyDoc_with_document(self):
+        assert self.MyDoc.__init__.calls('()', self.document)
+
+
 class WhenCheckingQuerySharding(BaseDocumentSubclassTest):
 
     def setup(self):
