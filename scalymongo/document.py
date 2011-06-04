@@ -126,6 +126,9 @@ class Document(SchemaDocument):
         """
         if not allow_global:
             cls.check_query_sharding(query)
+
+        cls._validate_update(update)
+
         try:
             # Use the `command` operation since `find_and_modify` is only
             # available in pymongo>=1.10.
@@ -147,13 +150,22 @@ class Document(SchemaDocument):
         if not allow_global:
             cls.check_query_sharding(spec)
 
+        cls._validate_update(document)
+
+        return cls.collection.update(spec, document, **kwargs)
+
+    @classmethod
+    def _validate_update(cls, document):
+        """Validate an update described in :param document:.
+
+        :param document: is expected to be either a new document or an update
+        modifier.
+        """
         if is_update_modifier(document):
             validate_update_modifier(document, cls.structure)
         else:
             # It's a full document replace.
             cls(document).validate()
-
-        return cls.collection.update(spec, document, **kwargs)
 
     @classmethod
     def check_query_sharding(cls, spec):

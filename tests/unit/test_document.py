@@ -367,7 +367,7 @@ class WhenFindingAndAllowingGlobal(BaseFind):
         assert not self.MyDoc.check_query_sharding.calls('()')
 
 
-class DescribeFindAndModify(BaseDocumentSubclassTest):
+class BaseFindAndModify(BaseDocumentSubclassTest):
 
     def setup(self):
         BaseDocumentSubclassTest.setup(self)
@@ -375,22 +375,25 @@ class DescribeFindAndModify(BaseDocumentSubclassTest):
         self.update = Dingus('update')
         self.kwargs = {'foo': Dingus('foo'), 'bar': Dingus('bar')}
         self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
+        self.MyDoc.validate = Dingus('validate')
+        self.MyDoc.__init__ = Dingus('__init__', return_value=None)
+        mod.is_update_modifier = Dingus('is_update_modifier')
+        mod.validate_update_modifier = Dingus('validate_update_modifier')
+
+    def teardown(self):
+        reload(mod)
+
+    def should_check_if_is_update_modifier(self):
+        assert mod.is_update_modifier.calls('()', self.update)
 
 
-class BaseFindAndModifyWithoutGlobalQuery(DescribeFindAndModify):
+class BaseFindAndModifyWithoutGlobalQuery(BaseFindAndModify):
 
     def should_check_query_sharding(self):
         assert self.MyDoc.check_query_sharding.calls('()', self.query)
 
 
-class WhenFindAndModifyWithoutError(BaseFindAndModifyWithoutGlobalQuery):
-
-    def setup(self):
-        BaseFindAndModifyWithoutGlobalQuery.setup(self)
-        self.MyDoc.__init__ = Dingus('__init__', return_value=None)
-
-        self.returned = self.MyDoc.find_and_modify(
-            self.query, self.update, **self.kwargs)
+class BaseFindAndModifyWithoutError(BaseFindAndModifyWithoutGlobalQuery):
 
     def should_run_findandmodify_command(self):
         assert self.MyDoc.database.calls(
@@ -407,6 +410,37 @@ class WhenFindAndModifyWithoutError(BaseFindAndModifyWithoutGlobalQuery):
         assert isinstance(self.returned, self.MyDoc)
 
 
+class WhenFindAndModifyWithUpdateModifier(BaseFindAndModifyWithoutError):
+
+    def setup(self):
+        BaseFindAndModifyWithoutError.setup(self)
+        mod.is_update_modifier.return_value = True
+
+        self.returned = self.MyDoc.find_and_modify(
+            self.query, self.update, **self.kwargs)
+
+    def should_validate_update_modifier(self):
+        assert mod.validate_update_modifier.calls(
+            '()', self.update, self.MyDoc.structure)
+
+
+class WhenFindAndModifyWithFullDocumentReplacement(
+    BaseFindAndModifyWithoutError):
+
+    def setup(self):
+        BaseFindAndModifyWithoutError.setup(self)
+        mod.is_update_modifier.return_value = False
+
+        self.returned = self.MyDoc.find_and_modify(
+            self.query, self.update, **self.kwargs)
+
+    def should_create_new_MyDoc_instance(self):
+        assert self.MyDoc.__init__.calls('()', self.update)
+
+    def should_validate_new_instance(self):
+        assert self.MyDoc.validate.calls('()')
+
+
 class WhenFindAndModifyOperationFails(BaseFindAndModifyWithoutGlobalQuery):
 
     def setup(self):
@@ -421,10 +455,10 @@ class WhenFindAndModifyOperationFails(BaseFindAndModifyWithoutGlobalQuery):
         assert self.returned is None
 
 
-class WhenFindAndModifyAllowingGlobal(DescribeFindAndModify):
+class WhenFindAndModifyAllowingGlobal(BaseFindAndModify):
 
     def setup(self):
-        DescribeFindAndModify.setup(self)
+        BaseFindAndModify.setup(self)
         self.MyDoc.find_and_modify(
             self.query, self.update, allow_global=True, **self.kwargs)
 
