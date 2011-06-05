@@ -59,6 +59,28 @@ class Document(SchemaDocument):
         # Call the parent `update` not the classmethod.
         SchemaDocument.update(self, self.find_one(spec))
 
+    def modify(self, update, query=None):
+        """Modify this document using :meth:`find_and_modify`.
+
+        :param:`update`: Is an update modifier or replacement document to be
+        be used for this
+
+        :param:`query`: A query specification for any additional parameters to
+        be used in the :meth:`find_and_modify` query.  This document's ``_id``
+        field and it's shard key fields (where applicable) are included in
+        addition to any parameters specified in the :param:`query`.
+        """
+        full_query = self.shard_key
+        if query:
+            full_query.update(query)
+        full_query['_id'] = self['_id']
+        result = self.find_and_modify(full_query, update, new=True)
+        # We have to clear the existing dictionary first in case the operation
+        # included an `$unset` or replaced the entire document.
+        self.clear()
+        # Call the parent `update` not the classmethod.
+        SchemaDocument.update(self, result)
+
     @classmethod
     def ensure_indexes(cls, **kwargs):
         """Ensure this any indexes declared on this index :class:`Document`.

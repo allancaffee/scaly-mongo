@@ -177,6 +177,95 @@ class WhenReloadingDocumentWithShardKey(object):
             '()', {'_id': self.doc['_id'], 'foo': 1, 'bar': 'moo'})
 
 
+## Document.modify ##
+
+class BaseModify(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {
+                'foo': int,
+                'bar': basestring,
+                'biz': float,
+            }
+            indexes = [
+                {'fields': ['foo', 'bar'],
+                 'shard_key': True}
+            ]
+            find_and_modify = Dingus('find_and_modify')
+
+        self.MyDoc = MyDoc
+        self.my_doc = MyDoc({
+            '_id': Dingus('_id'),
+            'foo': Dingus('foo'),
+            'bar': Dingus('bar'),
+            'biz': Dingus('biz'),
+        })
+        self.original_my_doc = dict(self.my_doc)
+        self.update = Dingus('update')
+        self.MyDoc.find_and_modify.return_value = {
+            '_id': self.my_doc['_id'],
+            'bar': Dingus('bar2'),
+            'biz': Dingus('biz2'),
+            'quizblorg': Dingus('quizblorg'),
+            'bandersnatch': Dingus('bandersnatch'),
+        }
+
+
+class PropertyModifyUpdatesLocalCopy(object):
+
+    def should_merge_result_from_find_and_modify(self):
+        assert self.my_doc == self.MyDoc.find_and_modify()
+
+
+class PropertyModifyWithDefaultQuerySpec(object):
+
+    def should_find_and_modify_document(self):
+        query = {'_id': self.original_my_doc['_id'],
+                 'foo': self.original_my_doc['foo'],
+                 'bar': self.original_my_doc['bar']}
+        assert self.MyDoc.find_and_modify.calls(
+            '()', query, self.update, new=True)
+
+
+class PropertyModifyWithExplicitQuerySpec(object):
+
+    def should_find_and_modify_document(self):
+        query = {'_id': self.original_my_doc['_id'],
+                 'foo': self.original_my_doc['foo'],
+                 'bar': self.original_my_doc['bar']}
+        query.update(self.query)
+        print query
+        print  self.MyDoc.find_and_modify.calls()
+        assert self.MyDoc.find_and_modify.calls(
+            '()', query, self.update, new=True)
+
+
+class TestModifyWithoutQuerySpec(
+    BaseModify,
+    PropertyModifyWithDefaultQuerySpec,
+    PropertyModifyUpdatesLocalCopy,
+    ):
+
+    def setup(self):
+        BaseModify.setup(self)
+        self.my_doc.modify(self.update)
+
+
+class TestModifyWithExplicitQuerySpec(
+    BaseModify,
+    PropertyModifyWithExplicitQuerySpec,
+    PropertyModifyUpdatesLocalCopy,
+    ):
+
+    def setup(self):
+        BaseModify.setup(self)
+        self.query = {'blarg': Dingus('blarg')}
+        self.my_doc.modify(self.update, query=self.query)
+
+
+## Document.ensure_index ##
+
 class DescribeEnsureIndexes(object):
 
     def setup(self):
