@@ -591,6 +591,84 @@ class WhenMakingFullDocumentUpdate(BaseUpdate):
         assert self.MyDoc.__init__.calls('()', self.document)
 
 
+## Document.remove ##
+
+class BaseRemove(BaseDocumentSubclassTest):
+
+    def setup(self):
+        BaseDocumentSubclassTest.setup(self)
+        self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
+        self.query = self.spec = Dingus('spec')
+
+
+class PropertyRemovingFromCollection(object):
+
+    def should_remove_from_collection(self):
+        assert self.MyDoc.collection.calls('remove', self.spec)
+
+    def should_return_result(self):
+        assert self.MyDoc.collection.calls('remove').once()
+        assert self.returned == self.MyDoc.collection.remove()
+
+
+class PropertyRemovingFromCollectionWithKWArgs(
+    PropertyRemovingFromCollection):
+
+    def should_remove_from_collection_with_kwargs(self):
+        assert self.MyDoc.collection.calls(
+            'remove', self.spec, **self.kwargs)
+
+
+class TestRemoveWithAllowGlobalFalse(
+    BaseRemove,
+    PropertyAllowGlobalIsFalse,
+    PropertyRemovingFromCollection,
+    ):
+
+    def setup(self):
+        BaseRemove.setup(self)
+        self.returned = self.MyDoc.remove(self.spec)
+
+
+class TestRemoveWithAllowGlobalTrue(
+    BaseRemove,
+    PropertyAllowGlobalIsTrue,
+    PropertyRemovingFromCollection,
+    ):
+
+    def setup(self):
+        BaseRemove.setup(self)
+        self.returned = self.MyDoc.remove(self.spec, allow_global=True)
+
+
+class TestRemoveWithAllowGlobalFalseAndKWArgs(
+    BaseRemove,
+    PropertyAllowGlobalIsTrue,
+    PropertyRemovingFromCollectionWithKWArgs,
+    ):
+
+    def setup(self):
+        BaseRemove.setup(self)
+        self.kwargs = dict(safe=True, w=3, j=True)
+        self.returned = self.MyDoc.remove(
+            self.spec, allow_global=True, **self.kwargs)
+
+
+class TestRemoveWithAllowGlobalTrueAndKWArgs(
+    BaseRemove,
+    PropertyAllowGlobalIsTrue,
+    PropertyRemovingFromCollectionWithKWArgs,
+    ):
+
+    def setup(self):
+        BaseRemove.setup(self)
+        self.kwargs = dict(safe=True, w=3, j=True)
+        self.returned = self.MyDoc.remove(
+            self.spec, allow_global=True, **self.kwargs)
+
+
+## Document.check_query_sharding ##
+
 class WhenCheckingQuerySharding(BaseDocumentSubclassTest):
 
     def setup(self):

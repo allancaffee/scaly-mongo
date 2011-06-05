@@ -155,6 +155,18 @@ class Document(SchemaDocument):
         return cls.collection.update(spec, document, **kwargs)
 
     @classmethod
+    def remove(cls, spec, allow_global=False, **kwargs):
+        """Find and remove documents matching :param spec:.
+
+        Additional keywords are passed to
+        :meth:``pymongo.collection.Collection.remove``.
+        """
+        if not allow_global:
+            cls.check_query_sharding(spec)
+
+        return cls.collection.remove(spec, **kwargs)
+
+    @classmethod
     def _validate_update(cls, document):
         """Validate an update described in :param document:.
 
