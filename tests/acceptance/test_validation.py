@@ -1,6 +1,6 @@
 from nose.tools import assert_raises
 
-from scalymongo import Document
+from scalymongo import Document, OR, IS
 from scalymongo.errors import ValidationError
 from tests.acceptance.base_acceptance_test import BaseAcceptanceTest
 from tests.helpers import assert_raises_with_message
@@ -59,3 +59,47 @@ def when_validating_document_with_string_mapped_to_float_should_fail_validation(
         ValidationError,
         "Position 'field.bar' was declared to be <type 'int'>, but encountered value 2.3",
         doc.validate)
+
+
+class DocumentWithMultiplePotentialTypes(Document):
+    structure = {
+        'field': OR(basestring, int),
+    }
+
+    __database__ = 'test'
+    __collection__ = __name__ + '_2'
+
+
+def when_validating_with_int_field_should_pass():
+    DocumentWithMultiplePotentialTypes({'field': 5}).validate()
+
+def when_validating_with_string_should_pass():
+    DocumentWithMultiplePotentialTypes({'field': 'foo'}).validate()
+
+def when_validating_with_list_of_int_should_fail():
+    assert_raises_with_message(
+        ValidationError,
+        "Position 'field' was declared to be <OR <type 'int'>, <type 'basestring'>>, but encountered value [1]",
+        DocumentWithMultiplePotentialTypes({'field': [1]}).validate)
+
+
+class DocumentWithMultiplePotentialValues(Document):
+    structure = {
+        'field': IS(1, 'foo'),
+    }
+
+    __database__ = 'test'
+    __collection__ = __name__ + '_3'
+
+
+def when_validating_with_1_field_should_pass():
+    DocumentWithMultiplePotentialValues({'field': 1}).validate()
+
+def when_validating_with_foo_should_pass():
+    DocumentWithMultiplePotentialValues({'field': 'foo'}).validate()
+
+def when_validating_with_2_should_fail():
+    assert_raises_with_message(
+        ValidationError,
+        "Position 'field' was declared to be <IS 1, 'foo'>, but encountered value 2",
+        DocumentWithMultiplePotentialValues({'field': 2}).validate)

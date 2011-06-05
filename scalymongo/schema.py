@@ -99,10 +99,10 @@ def validate_single_field(path, value, expected_type):
 def is_field_of_expected_type(value, expected_type):
     """Return ``True`` iff :param value: meets the type description of :param
     expected_type:.
-
-    For now this is a simple :meth:`isinstance` but at some point we want
-    mongokit style ``IS``, ``OR``, etc validators.
     """
+    if hasattr(expected_type, 'evaluate'):
+        return expected_type.evaluate(value)
+
     return isinstance(value, expected_type)
 
 

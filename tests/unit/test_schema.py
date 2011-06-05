@@ -265,25 +265,45 @@ class WhenFieldIsNotExpectedType(DescribeValidateSingleField):
 ## is_field_of_expected_type ##
 
 
-class DescribeIsFieldOfExpectedType(object):
+class WhenTypeIsSchemaOperator(object):
 
     def setup(self):
-        mod.isinstance = Dingus('isinstance')
         self.value = Dingus()
         self.expected_type = Dingus()
 
         self.returned = is_field_of_expected_type(
             self.value, self.expected_type)
 
-    def teardown(self):
-        del mod.isinstance
+    def should_evaluate_value(self):
+        assert self.expected_type.calls('evaluate', self.value)
 
-    def should_call_isinstance_with_value_and_expected_type(self):
-        assert mod.isinstance.calls('()', self.value, self.expected_type)
+    def should_return_evaluation(self):
+        assert self.expected_type.calls('evaluate').once()
+        assert self.returned == self.expected_type.evaluate()
 
-    def should_return_result_of_isinstance(self):
-        assert mod.isinstance.calls('()').once()
-        assert self.returned == mod.isinstance()
+
+class WhenTypeIsSimpleClass(object):
+
+    def should_recognize_matching_instances(self):
+        mapping = [
+            ('string', str),
+            (u'unicode', unicode),
+            (1, int),
+            (1.1, float),
+        ]
+        for value, expected_type in mapping:
+            assert is_field_of_expected_type(value, expected_type)
+
+    def should_reject_unmatching_instances(self):
+        mapping = [
+            (u'not string', str),
+            ('regular string', unicode),
+            (1.1, int),
+            (1, float),
+            (Dingus(), int),
+        ]
+        for value, expected_type in mapping:
+            assert not is_field_of_expected_type(value, expected_type)
 
 
 ## validate_required_fields ##
