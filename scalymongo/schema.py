@@ -2,6 +2,7 @@
 """
 
 from scalymongo.errors import SchemaError, ValidationError
+from scalymongo.helpers import AttrDict
 from scalymongo.structure_walker import StructureWalker
 
 
@@ -70,7 +71,7 @@ def find_shard_index(indexes):
     return shard_index
 
 
-class SchemaDocument(dict):
+class SchemaDocument(AttrDict):
     """Base class for all documents with an enforced schema."""
 
     __metaclass__ = SchemaMetaclass

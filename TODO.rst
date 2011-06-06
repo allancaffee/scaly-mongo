@@ -1,10 +1,3 @@
-Dot Notation
-============
-
-Allow users to refer to document elements using dot notation.  I.e.
-``post.author`` and ``post['author']`` should return the same object.
-
-
 Embdedded Documents
 ===================
 
