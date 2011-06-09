@@ -14,36 +14,107 @@ def is_update_modifier(doc):
     return key.startswith('$')
 
 
-class AttrDict(dict):
-    """A ``dict`` whose items can be retrieved as attributes.
+class ConversionDict(dict):
+    """:class:`dict` type that wraps contents on lookup.
+
+    >>> cd = ConversionDict({'x': 5, 'y': 6}, {'x': str})
+    >>> cd['x']
+    '5'
+    >>> cd.x
+    '5'
+    >>> cd['y']
+    6
+    >>> cd.y
+    6
+
+    :param content: - The dictionary content.
+    :param conversions: - A dictionary containing conversions to be applied on
+        lookup.  If no conversion is present in `conversions` the value is
+        returned unchanged.
     """
 
-    def __getattr__(self, name):
-        """Get the :param name: attribute.
+    NONKEY_ATTRS = set(['_conversions'])
+    """Attributes which should not be treated as keys in the dictionary.
 
-        If :param name: is a ``dict`` then it will be wrapped in a new
-        :class:`AttrDict`.  This allows chained dot notation to reference
+    Classes extending :class:`ConversionDict` should add the names of any
+    attributes they wish to keep that should not be set into the underlying
+    `dict`.
+    """
+
+    def __init__(self, content, conversions):
+        dict.__init__(self, content)
+        self._conversions = conversions
+
+    def __getitem__(self, key):
+        value = dict.__getitem__(self, key)
+        conversion = self.__get_conversion(key)
+        return self.__convert_value(value, conversion)
+
+    @staticmethod
+    def __convert_value(value, conversion):
+        """Convert `value` using `conversion`.
+
+        If `conversion` is ``None`` then `value` is returned unchanged.
+        """
+        if isinstance(value, dict) and not isinstance(value, ConversionDict):
+            return ConversionDict(value, conversion)
+
+        if conversion is None:
+            return value
+
+        if isinstance(conversion, dict):
+            return ConversionDict(value, conversion)
+
+        if isinstance(value, list):
+            return [conversion(x) for x in value]
+
+        return conversion(value)
+
+    def __get_conversion(self, key):
+        if self._conversions:
+            return self._conversions.get(key)
+
+    def __getattr__(self, name):
+        """Get the `name` attribute.
+
+        If `name` is a :class:`dict` then it will be wrapped in a new
+        :class:`ConversionDict`.  This allows chained dot notation to reference
         items in embedded dictionaries.
         """
         if name in self:
-            result = self.__getitem__(name)
-            if isinstance(result, dict):
-                return AttrDict(result)
-            return result
+            return self.__getitem__(name)
 
-        raise AttributeError('{0} has no attribute {1}.'.format(
-            repr(type(self).__name__), repr(name)))
+        raise AttributeError('{0.__name__!r} has no attribute {1!r}.'.format(
+            type(self), name))
 
     def __setattr__(self, name, value):
         """Set an attribute.
 
-        Put an item in this dictionary unless :param name: is one of the special
-        properties ScalyMongo uses.  Or some other attribute already set on
-        either the instance or the class (which allows the tests to dingus out
-        methods on instances).
+        Put an item in this dictionary unless `name` is a contained in
+        :data:`NONKEY_ATTRS`.  Or some other attribute already set on either
+        the instance or the class (which allows the tests to dingus out methods
+        on instances).
         """
-        if name in ['collection', 'database', 'connection'] \
-               or name in dir(self):
+        if name in self.NONKEY_ATTRS or name in dir(self):
             object.__setattr__(self, name, value)
         else:
             self.__setitem__(name, value)
+
+    def iteritems(self):
+        """Iterate the items in this :class:`ConversionDict`.
+
+        The underlying :meth:`dict.iteritems` must be wrapped such that the
+        values returned by this generator are converted to appropriate types.
+        """
+        for key, value in dict.iteritems(self):
+            conversion = self.__get_conversion(key)
+            yield key, self.__convert_value(value, conversion)
+
+
+    def itervalues(self):
+        """Iterate the values in this :class:`ConversionDict`.
+
+        The values are converted to the appropriate type before returning.
+        """
+        for key, value in self.iteritems():
+            yield value

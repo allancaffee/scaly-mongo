@@ -2,7 +2,7 @@
 """
 
 from scalymongo.errors import SchemaError, ValidationError
-from scalymongo.helpers import AttrDict
+from scalymongo.helpers import ConversionDict
 from scalymongo.structure_walker import StructureWalker
 
 
@@ -41,8 +41,38 @@ class SchemaMetaclass(type):
 
         attrs['shard_index'] = find_shard_index(attrs['indexes'])
 
+        if name != 'SchemaDocument' and 'structure' in attrs:
+            attrs['_conversions'] = make_conversion_dict(attrs['structure'])
+
         return type.__new__(cls, name, bases, attrs)
 
+
+def make_conversion_dict(structure):
+    """Build a default conversion dictionary for `structure`
+
+    The default conversion mapping includes translations for any elements which
+    are subclasses of :class:`SchemaDocument`.
+
+    """
+    conversions = {}
+    for key, value in structure.iteritems():
+        conversion = _make_single_conversion(value)
+        if conversion:
+            conversions[key] = conversion
+
+    if conversions:
+        return conversions
+
+
+def _make_single_conversion(value):
+    if isinstance(value, list):
+        return _make_single_conversion(value[0])
+
+    if isinstance(value, dict):
+        return make_conversion_dict(value)
+
+    if isinstance(value, type) and issubclass(value, SchemaDocument):
+        return value
 
 def find_shard_index(indexes):
     """Find the shard key and validate index properties.
@@ -71,10 +101,21 @@ def find_shard_index(indexes):
     return shard_index
 
 
-class SchemaDocument(AttrDict):
-    """Base class for all documents with an enforced schema."""
+class SchemaDocument(ConversionDict):
+    """Base class for all documents with an enforced schema.
+
+    This class also uses the structure information to wrap the values of
+    embedded non-primatives.
+    """
 
     __metaclass__ = SchemaMetaclass
+
+    NONKEY_ATTRS = set(['collection', 'database', 'connection']) & \
+        ConversionDict.NONKEY_ATTRS
+
+    def __init__(self, *args, **kwargs):
+        content = dict(*args, **kwargs)
+        ConversionDict.__init__(self, content, self._conversions)
 
     def validate(self):
         validate_structure(self, self.structure)
@@ -93,8 +134,8 @@ def validate_single_field(path, value, expected_type):
     """
     if not is_field_of_expected_type(value, expected_type):
         raise ValidationError(
-            "Position {0} was declared to be {1}, but encountered value {2}"
-            .format(repr(path), expected_type, value))
+            "Position {0!r} was declared to be {1}, but encountered value {2}"
+            .format(path, expected_type, value))
 
 
 def is_field_of_expected_type(value, expected_type):

@@ -78,8 +78,42 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
                         self.base_a.indexes[0],
                         self.base_b.indexes[0]],
             'shard_index': mod.find_shard_index(),
+            '_conversions': mod.make_conversion_dict(),
         }
 
+
+## make_conversion_dict ##
+
+class WhenStructureContainsSchemaDocumentSubclass(object):
+
+    @classmethod
+    def setup_class(cls):
+        class MySubDoc(SchemaDocument):
+            structure = {'foo': int}
+
+        cls.MySubDoc = MySubDoc
+        cls.structure = {'bar': MySubDoc}
+        cls.result = make_conversion_dict(cls.structure)
+
+    def should_add_conversion(self):
+        assert self.result == self.structure
+
+
+class WhenStructureContainsOnlyPrimatives(object):
+
+    @classmethod
+    def setup_class(cls):
+        cls.structure = {
+            'bar': int,
+            'foo': float,
+        }
+        cls.result = make_conversion_dict(cls.structure)
+
+    def should_have_no_conversions(self):
+        assert self.result is None
+
+
+## find_shard_index ##
 
 class BaseFindShardIndex(object):
     pass
@@ -184,11 +218,15 @@ class WhenShardKeyExistsWithNoUniqueIndexes(object):
         }
 
 
+## DescribeSchemaDocument ##
+
 class DescribeSchemaDocument(DingusTestCase(SchemaDocument)):
 
     def setup(self):
         super(DescribeSchemaDocument, self).setup()
-        self.document = SchemaDocument()
+        class MyDocument(SchemaDocument):
+            structure = {'foo': int}
+        self.document = MyDocument()
 
 
 class WhenValidating(DescribeSchemaDocument):

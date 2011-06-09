@@ -1,34 +1,3 @@
-Embdedded Documents
-===================
-
-Implement support for embedded documents.  For example:
-
-.. code-block:: python
-
-    class Comment(Document):
-        structure = {
-            'author': basestring,
-            'comment': basestring,
-            'rank': int,
-        }
-
-    class BlogPost(Document):
-        structure = {
-            'author': basestring,
-            'title': basestring,
-            'body': basestring,
-            'unique_views': int,
-            'comments': [Comment]
-        }
-        __database__ = 'blog'
-        __collection__ = 'blog_posts'
-
-In this example the :class:`Comment` documents are stored in MongoDB exactly as
-if the underlying ``structure`` had been placed in the ``comments`` list
-directly.  The diffence is that ``post['comments']`` returns a list of
-:class:`Comment` objects instead of simple `dict` s.
-
-
 Shard-Friendly DBRefs
 =====================
 
