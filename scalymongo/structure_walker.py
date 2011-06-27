@@ -44,7 +44,7 @@ class StructureWalker(object):
             assert len(sub_structure) == 1
             # Validate each value in the list against the specified content
             # type.
-            for value, i in zip(value, range(len(value))):
+            for i, value in enumerate(value):
                 self._recurse_or_validate_field(
                     value, sub_structure[0], _join(path, i))
             return
