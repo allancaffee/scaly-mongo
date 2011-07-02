@@ -1,3 +1,4 @@
+from deterministic_dingus import DeterministicDingus
 from dingus import DingusTestCase, Dingus, exception_raiser
 from nose.tools import assert_raises
 
@@ -75,6 +76,9 @@ class DescribeGetConcreteClasses(DingusTestCase(get_concrete_classes)):
     def should_return_concrete_classes(self):
         assert self.returned == mod.DocumentMetaclass.concrete_classes
 
+####
+## Document
+####
 
 class DescribeDocumentClass(object):
 
@@ -92,6 +96,72 @@ class BaseDocumentTest(DingusTestCase(Document, ['UnsafeBehaviorError'])):
         self.doc = Document()
         self.doc.connection = Dingus('connection')
 
+
+####
+## Document.__init__
+####
+
+class WhenInitializingDocumentSubclassWithoutDefaults(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {'foo': int}
+
+        self.my_doc = MyDoc()
+
+    def should_create_empty_document(self):
+        assert self.my_doc == {}
+
+
+class BaseDocumentSubclassWithDefaultsTest(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {'foo': int}
+            default_values = {'foo': 5}
+
+        self.MyDoc = MyDoc
+        mod.value_or_result = DeterministicDingus('value_or_result')
+
+    def teardown(self):
+        mod.value_or_result = value_or_result
+
+
+class WhenInitializingDocumentSubclassWithDefaults(
+    BaseDocumentSubclassWithDefaultsTest):
+
+    def setup(self):
+        BaseDocumentSubclassWithDefaultsTest.setup(self)
+        self.my_doc = self.MyDoc()
+
+    def should_create_document_with_default_values(self):
+        assert self.my_doc == {'foo': mod.value_or_result(5)}
+
+
+class WhenInitializingWithKeywordOverridingDefault(
+    BaseDocumentSubclassWithDefaultsTest):
+
+    def setup(self):
+        BaseDocumentSubclassWithDefaultsTest.setup(self)
+        self.my_doc = self.MyDoc(foo=0)
+
+    def should_create_document_with_explicit_value(self):
+        assert self.my_doc == {'foo': 0}
+
+
+class WhenInitializingWithArgOverridingDefault(
+    BaseDocumentSubclassWithDefaultsTest):
+
+    def setup(self):
+        BaseDocumentSubclassWithDefaultsTest.setup(self)
+        self.my_doc = self.MyDoc({'foo':0})
+
+    def should_create_document_with_explicit_value(self):
+        assert self.my_doc == {'foo': 0}
+
+####
+## Document.save
+####
 
 class BaseSaveTest(BaseDocumentTest):
 
@@ -125,6 +195,9 @@ class WhenDocumentHasNoId(BaseSaveTest):
     def should_insert_document_into_collection(self):
         assert self.doc.collection.calls('insert', self.doc)
 
+####
+## Document.reload
+####
 
 class WhenReloadingDocumentWithoutShardKey(object):
 

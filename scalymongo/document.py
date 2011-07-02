@@ -5,7 +5,7 @@ import functools
 from pymongo.errors import OperationFailure
 
 from scalymongo.errors import UnsafeBehaviorError, GlobalQueryException
-from scalymongo.helpers import is_update_modifier
+from scalymongo.helpers import is_update_modifier, value_or_result
 from scalymongo.schema import (
     SchemaDocument,
     SchemaMetaclass,
@@ -38,6 +38,22 @@ class Document(SchemaDocument):
 
     __metaclass__ = DocumentMetaclass
     abstract = True
+    default_values = {}
+    """A dictionary mapping fields to default values.
+
+    The values may either be static values or a function that returns a default
+    value.  For example to put a new :class:`~uuid.UUID` in the field `uuid` you
+    would use a default like:
+
+    .. code-block:: python
+
+        default_values = {'uuid': uuid.UUID}
+    """
+
+    def __init__(self, *args, **kwargs):
+        SchemaDocument.__init__(self, *args, **kwargs)
+        for key, value in self.default_values.iteritems():
+            self.setdefault(key, value_or_result(value))
 
     def save(self):
         if '_id' in self:

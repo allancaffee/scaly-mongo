@@ -32,8 +32,20 @@ class WhenDocContainsModifierFields(object):
     def should_return_false(self):
         assert self.returned is False
 
+####
+## value_or_result
+####
 
-## ConversionDict ##
+def when_potential_is_not_callable_should_return_potential():
+    assert value_or_result(5) == 5
+
+def when_potential_is_callable_should_return_result():
+    d = Dingus('d')
+    assert value_or_result(d) == d()
+
+####
+## ConversionDict
+####
 
 class DescribeConversionDictInit(object):
 
