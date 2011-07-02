@@ -235,8 +235,6 @@ class PropertyModifyWithExplicitQuerySpec(object):
                  'foo': self.original_my_doc['foo'],
                  'bar': self.original_my_doc['bar']}
         query.update(self.query)
-        print query
-        print  self.MyDoc.find_and_modify.calls()
         assert self.MyDoc.find_and_modify.calls(
             '()', query, self.update, new=True)
 

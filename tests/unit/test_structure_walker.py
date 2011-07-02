@@ -21,7 +21,6 @@ class WhenWalkingSimpleStructure(BaseStructureWalker):
         self.structure_walker.walk_dict(self.body, self.structure)
 
     def should_visit_int(self):
-        print self.field_validator.calls
         assert self.field_validator.calls('()', 'int', 1, int)
 
     def should_visit_float(self):

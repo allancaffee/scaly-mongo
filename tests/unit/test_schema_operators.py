@@ -27,7 +27,6 @@ class DescribeEvaluateOr(object):
         assert self.returned == mod.isinstance()
 
     def should_call_isinstance_on_value_against_args(self):
-        print  mod.isinstance.calls('()')
         assert mod.isinstance.calls('()', self.value, (self.arg0, self.arg1))
 
 
