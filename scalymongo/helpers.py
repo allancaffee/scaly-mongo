@@ -130,3 +130,13 @@ class ConversionDict(dict):
         """
         for key, value in self.iteritems():
             yield value
+
+    def items(self):
+        """Return a list of the items in this :class:`ConversionDict`.
+        """
+        return [item for item in self.iteritems()]
+
+    def values(self):
+        """Return a list of the values in this :class:`ConversionDict`.
+        """
+        return [value for value in self.itervalues()]

@@ -146,15 +146,12 @@ class WhenGettingAnEmbeddedDict(object):
     def should_return_conversion_dict_with_conversions_for_a(self):
         assert self.returned._conversions == self.conversions['a']
 
+####
+## ConversionDict.iteritems
+## ConversionDict.items
+####
 
-## ConversionDict.iteritems ##
-
-class WhenIteratingItems(BaseConversionDictTest):
-
-    def setup(self):
-        BaseConversionDictTest.setup(self)
-
-        self.returned = [x for x in self.conversion_dict.iteritems()]
+class PropertyGettingItems(object):
 
     def should_return_2_items(self):
         assert len(self.returned) == 2
@@ -169,14 +166,33 @@ class WhenIteratingItems(BaseConversionDictTest):
         assert self.x_conversion.calls('()', self.x_value)
 
 
-## ConversionDict.iterkeys ##
-
-class WhenIteratingValues(BaseConversionDictTest):
+class WhenIteratingItems(
+    BaseConversionDictTest,
+    PropertyGettingItems,
+    ):
 
     def setup(self):
         BaseConversionDictTest.setup(self)
 
-        self.returned = [x for x in self.conversion_dict.itervalues()]
+        self.returned = [x for x in self.conversion_dict.iteritems()]
+
+
+class WhenGettingItems(
+    BaseConversionDictTest,
+    PropertyGettingItems,
+    ):
+
+    def setup(self):
+        BaseConversionDictTest.setup(self)
+
+        self.returned = self.conversion_dict.items()
+
+####
+## ConversionDict.itervalues
+## ConversionDict.values
+####
+
+class PropertyGettingValues(object):
 
     def should_return_2_items(self):
         assert len(self.returned) == 2
@@ -189,3 +205,25 @@ class WhenIteratingValues(BaseConversionDictTest):
 
     def should_convert_x(self):
         assert self.x_conversion.calls('()', self.x_value)
+
+
+class WhenIteratingValues(
+    BaseConversionDictTest,
+    PropertyGettingValues,
+    ):
+
+    def setup(self):
+        BaseConversionDictTest.setup(self)
+
+        self.returned = [x for x in self.conversion_dict.itervalues()]
+
+
+class WhenGettingValues(
+    BaseConversionDictTest,
+    PropertyGettingValues,
+    ):
+
+    def setup(self):
+        BaseConversionDictTest.setup(self)
+
+        self.returned = self.conversion_dict.values()
