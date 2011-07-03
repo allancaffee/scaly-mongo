@@ -1,4 +1,8 @@
-"""The base document models.
+"""
+Schema
+======
+
+The core schema validation logic.
 """
 
 from scalymongo.errors import SchemaError, ValidationError
@@ -139,8 +143,7 @@ def validate_single_field(path, value, expected_type):
 
 
 def is_field_of_expected_type(value, expected_type):
-    """Return ``True`` iff :param value: meets the type description of :param
-    expected_type:.
+    """Return ``True`` iff `value` meets the type description of `expected_type`.
     """
     if hasattr(expected_type, 'evaluate'):
         return expected_type.evaluate(value)
@@ -149,7 +152,7 @@ def is_field_of_expected_type(value, expected_type):
 
 
 def validate_required_fields(fields, required):
-    """Ensure that all :param required: fields are present in :param fields:.
+    """Ensure that all `required` fields are present in `fields`.
     """
     missing = required.difference(fields.keys())
     if missing:
@@ -168,14 +171,11 @@ def validate_update_modifier(spec, structure):
 def validate_single_modifier(modifier, args, structure):
     """Validate a single update modifier.
 
-    :Parameters:
-    :param modifier: A single update modifier (e.g. ``$set``).
-
-    :param args: The dictionary of arguments provided to the modifier.
-
-    :param structure: The document structure of the document that the
-    modification should be applied to.  This is used to determine whether or not
-    the modification is sane for this document.
+    :param modifier: is a single update modifier (e.g. ``$set``).
+    :param args: is the dictionary of arguments provided to the modifier.
+    :param structure: Is the structure of the document that the
+        modification should be applied to.  This is used to determine whether
+        or not the modification is sane for this document.
     """
     if modifier == '$set':
         return validate_structure(args, structure)

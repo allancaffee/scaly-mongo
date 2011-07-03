@@ -12,7 +12,7 @@ from scalymongo.document import get_concrete_classes
 class Connection(pymongo.Connection):
     """A connection to a MongoDB database.
 
-    This is a wrapper for a :class:`pymongo.Connection`.
+    This is a wrapper for a :class:`pymongo.connection.Connection`.
     """
 
     def connect_document(self, document):

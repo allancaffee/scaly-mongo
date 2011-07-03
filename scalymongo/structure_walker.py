@@ -1,15 +1,20 @@
+"""
+Structure Walker
+================
+
+A utility used to aid in structure validation.
+"""
 from inspect import isclass
 
 from scalymongo.errors import ValidationError
 
 
 class StructureWalker(object):
-    """A helper class to recurse a dict-like object in accordance with a
-    structure.
+    """A helper class to recurse a :class:`dict`-like object in accordance with
+    a structure.
 
-    The new dictionary with be an instance of :param dict_type:.
-    :param field_tranlator: should be function mapping the ``value``
-    and ``type_`` to a the new value for a key.
+    :param field_translator: should be function mapping the ``value`` and
+        ``type_`` to the new value for a key.
 
     """
 
@@ -17,10 +22,10 @@ class StructureWalker(object):
         self.field_validator = field_validator
 
     def walk_dict(self, body, structure, path=None):
-        """Validate a dictionary in accordance with :param structure:.
+        """Validate a dictionary in accordance with `structure`.
 
-        A :class:`ValidationError` is raised if any fields in :param body: are
-        not present in :param structure:.
+        A :class:`ValidationError` is raised if any fields in `body` are
+        not present in `structure`.
         """
         _check_for_unknown_fields(body, structure, path)
 
@@ -57,10 +62,10 @@ class StructureWalker(object):
 
 
 def _check_for_unknown_fields(body, structure, path):
-    """Check :param body: for any keys not present in :param structure:.
+    """Check `body` for any keys not present in `structure`.
 
-    This only checks the first level of keys.  Any keys from dicts in the :param
-    body:'s values will not be checked.
+    This only checks the first level of keys.  Any keys from :class:`dict`s in
+    the `body`\ 's values will not be checked.
     """
     type_keys = tuple([key for key in structure if isclass(key)])
     existing_fields = set([key for key in body if not isclass(key)])
@@ -85,9 +90,9 @@ def _check_for_unknown_fields(body, structure, path):
 
 
 def _join(head, tail):
-    """Join :param head: and :param tail: with a dot.
+    """Join `head` and `tail` with a dot.
 
-    If head is ``None`` return only :param tail:.
+    If head is ``None`` only `tail` is returned.
     """
     if head is None:
         return tail

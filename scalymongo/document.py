@@ -1,4 +1,8 @@
-"""The base document models.
+"""
+Document
+========
+
+The base document models.
 """
 import functools
 
@@ -30,11 +34,19 @@ class DocumentMetaclass(SchemaMetaclass):
 
 
 def get_concrete_classes():
-    """Return a set of all registered :class:`Document` classes."""
+    """Return a set of all non-abstract :class:`Document` subclasses."""
     return DocumentMetaclass.concrete_classes
 
 
 class Document(SchemaDocument):
+    """The base document class all user models should extend.
+
+    Any subclasses of :class:`Document` which are not abstract can be used from
+    the model property on a :class:`~scalymongo.connection.Connection`.  This
+    class wraps many of the methods available on
+    :class:`pymongo.collection.Collection` in order to return objects of the
+    appropriate subclass.
+    """
 
     __metaclass__ = DocumentMetaclass
     abstract = True
@@ -67,8 +79,8 @@ class Document(SchemaDocument):
     def reload(self):
         """Reload this document.
 
-        Make use of the shard key for sharded collections to avoid a gloabl
-        query.
+        This will make use of the shard key for sharded collections to avoid a
+        global query.
         """
         spec = self.shard_key
         spec['_id'] = self['_id']
@@ -78,13 +90,14 @@ class Document(SchemaDocument):
     def modify(self, update, query=None):
         """Modify this document using :meth:`find_and_modify`.
 
-        :param:`update`: Is an update modifier or replacement document to be
-        be used for this
+        :param update: Is an update modifier or replacement document to be
+            be used for this
 
-        :param:`query`: A query specification for any additional parameters to
-        be used in the :meth:`find_and_modify` query.  This document's ``_id``
-        field and it's shard key fields (where applicable) are included in
-        addition to any parameters specified in the :param:`query`.
+        :param query: A query specification for any additional parameters to
+            be used in the :meth:`find_and_modify` query.  This document's
+            ``_id`` field and it's shard key fields (where applicable) are
+            included in addition to any parameters specified in the
+            `query`.
         """
         full_query = self.shard_key
         if query:
@@ -103,6 +116,8 @@ class Document(SchemaDocument):
 
         This is an administrative task and should be done with care as
         (re)building large indexes can make a database unusable for some time.
+        Any additional `kwargs` are passed to
+        :meth:`pymongo.collection.Collection.ensure_index`.
         """
         for index in cls.indexes:
             kwargs['unique'] = index.get('unique', False)
@@ -112,14 +127,12 @@ class Document(SchemaDocument):
     def find_one(cls, spec=None, allow_global=False, **kwargs):
         """Find and return one matching document of this type.
 
-        :Parameters:
-
-        - :param:`spec` (optional): Is a query to find the matching document.
+        :param spec: (optional): Is a query to find the matching document.
           Note that unlike other tools providing `find_one` scalymongo requires
           this value to be a dictionary including at a bare minimum the shard
           key for this models collection.
 
-        - :param:`kwargs` (optional): Additional keyword arguments will be
+        :param kwargs: (optional): Additional keyword arguments will be
           passed to :meth:`pymongo.collection.Collection.find_one`.
         """
         kwargs['as_class'] = cls
@@ -133,7 +146,8 @@ class Document(SchemaDocument):
 
         This is a wrapped call to :meth:`pymongo.collection.Collection.find`
         which returns document objects of the appropriate class instead of
-        ``dict`` instances.
+        ``dict`` instances.  All additional arguments are passed to the
+        underlying method.
         """
         kwargs['as_class'] = cls
         if not allow_global:
@@ -145,22 +159,26 @@ class Document(SchemaDocument):
                         allow_global=False, **kwargs):
         """Find and atomically update a single document.
 
-        Note that this method returns *old* (pre-update) version of the document
-        by default.  This is the default for 'findAndModify' in the Mongo shell
-        and it is maintained here for the sake of consistency.  Pass :keyword
-        new: as ``True`` to return the updated document instead.
+        .. note::
+            This method returns the *old* (pre-update) version of the document
+            by default.  This is the default for ``findAndModify`` in the Mongo
+            shell and it is maintained here for the sake of consistency.  Pass
+            `new` as ``True`` to return the updated document instead.
 
-        :Parameters:
-            - `query`: filter for the update (default ``{}``)
-            - `sort`: priority if multiple objects match (default ``{}``)
-            - `update`: see second argument to :meth:`update` (no default)
-            - `remove`: remove rather than updating (default ``False``)
-            - `new`: return updated rather than original object
-              (default ``False``)
-            - `fields`: see second argument to :meth:`find` (default all)
-            - `upsert`: insert if object doesn't exist (default ``False``)
-            - `**kwargs`: any other options the findAndModify_ command
-              supports can be passed here.
+        :param query: filter for the update (default ``{}``)
+        :param update: see second argument to :meth:`update` (no default)
+        :keyword allow_global: If ``True`` the query will not be checked to
+            ensure that it contains the full shard key.  (default ``False``)
+        :param sort: priority if multiple objects match (default ``{}``)
+        :param remove: remove rather than updating (default ``False``)
+        :param new: return updated rather than original object
+            (default ``False``)
+        :param fields: see second argument to :meth:`find` (default all)
+        :param upsert: insert if object doesn't exist (default ``False``)
+        :param kwargs: any other options the findAndModify_ command
+            supports can be passed here.
+
+        .. _findAndModify: http://www.mongodb.org/display/DOCS/findAndModify+Command
         """
         if not allow_global:
             cls.check_query_sharding(query)
@@ -180,10 +198,18 @@ class Document(SchemaDocument):
 
     @classmethod
     def update(cls, spec, document, allow_global=False, **kwargs):
-        """Update a document matching :param spec: using :param document:.
+        """Update a document matching `spec` using `document`.
 
+        Additional keyword arguments are passed to
+        :meth:`pymongo.collection.Collection.update`.
+
+        :param spec: is a document specification (i.e. query) for the document
+            to be updated.  if more than one document matches only the first
+            will but updated unless `multi` is ``True``.
         :param document: is expected to be either a new document or an update
-        modifier.
+            modifier.
+        :keyword multi: update multiple documents or just the first (default
+            ``False``).
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -194,10 +220,10 @@ class Document(SchemaDocument):
 
     @classmethod
     def remove(cls, spec, allow_global=False, **kwargs):
-        """Find and remove documents matching :param spec:.
+        """Find and remove documents matching `spec`.
 
         Additional keywords are passed to
-        :meth:``pymongo.collection.Collection.remove``.
+        :meth:`pymongo.collection.Collection.remove`.
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -206,10 +232,10 @@ class Document(SchemaDocument):
 
     @classmethod
     def _validate_update(cls, document):
-        """Validate an update described in :param document:.
+        """Validate an update described in `document`.
 
         :param document: is expected to be either a new document or an update
-        modifier.
+            modifier.
         """
         if is_update_modifier(document):
             validate_update_modifier(document, cls.structure)
@@ -219,7 +245,7 @@ class Document(SchemaDocument):
 
     @classmethod
     def check_query_sharding(cls, spec):
-        """Check that all required keys are present in :param spec:.
+        """Check that all required keys are present in `spec`.
 
         If any shard keys are unspecified this will raise a
         :class:`GlobalQueryException`.

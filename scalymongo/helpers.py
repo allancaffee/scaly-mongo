@@ -1,8 +1,14 @@
+"""
+Helpers
+=======
+
+Useful functions and classes that don't really fit elsewhere.
+"""
 
 def is_update_modifier(doc):
-    """Return true if and only if :param doc: is an update modifier.
+    """Return true if and only if `doc` is an update modifier.
 
-    This function only checks the first key it finds.  :param doc: is assumed to
+    This function only checks the first key it finds.  `doc` is assumed to
     be either a valid update modifier or a replacement document.  The result of
     passing a bad modifier or document is undefined.
     """
@@ -27,7 +33,7 @@ def value_or_result(potential):
 
 
 class ConversionDict(dict):
-    """:class:`dict` type that wraps contents on lookup.
+    """A :class:`dict` subclass that wraps contents on lookup.
 
     >>> cd = ConversionDict({'x': 5, 'y': 6}, {'x': str})
     >>> cd['x']
@@ -39,8 +45,8 @@ class ConversionDict(dict):
     >>> cd.y
     6
 
-    :param content: - The dictionary content.
-    :param conversions: - A dictionary containing conversions to be applied on
+    :param content: is the dictionary content.
+    :param conversions: is a dictionary containing conversions to be applied on
         lookup.  If no conversion is present in `conversions` the value is
         returned unchanged.
     """
@@ -50,7 +56,7 @@ class ConversionDict(dict):
 
     Classes extending :class:`ConversionDict` should add the names of any
     attributes they wish to keep that should not be set into the underlying
-    `dict`.
+    :class:`dict`.
     """
 
     def __init__(self, content, conversions):
