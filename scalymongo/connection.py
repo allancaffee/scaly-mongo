@@ -1,3 +1,7 @@
+"""
+Connection
+==========
+"""
 import warnings
 
 import pymongo
@@ -6,6 +10,10 @@ from scalymongo.document import get_concrete_classes
 
 
 class Connection(pymongo.Connection):
+    """A connection to a MongoDB database.
+
+    This is a wrapper for a :class:`pymongo.Connection`.
+    """
 
     def connect_document(self, document):
         """Connect a document by creating a new type and injecting the
