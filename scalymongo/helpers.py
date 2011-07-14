@@ -32,6 +32,15 @@ def value_or_result(potential):
     return potential
 
 
+class ClassDefault(object):
+    """A sentinel value signaling that the class default should be used.
+
+    This is used as default value for keyword arguments so that a default can
+    be set during class declaration, but the value can still be explicitly
+    specified when the function is called.
+    """
+
+
 class ConversionDict(dict):
     """A :class:`dict` subclass that wraps contents on lookup.
 

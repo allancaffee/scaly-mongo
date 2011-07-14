@@ -92,7 +92,8 @@ class DescribeDocumentClass(object):
         assert Document.abstract is True
 
 
-class BaseDocumentTest(DingusTestCase(Document, ['UnsafeBehaviorError'])):
+class BaseDocumentTest(DingusTestCase(
+    Document, ['UnsafeBehaviorError', 'ClassDefault'])):
 
     def setup(self):
         super(BaseDocumentTest, self).setup()
@@ -185,18 +186,40 @@ class WhenDocumentHasAnId(BaseSaveTest):
         assert not self.doc.collection.calls('insert')
 
 
-class WhenDocumentHasNoId(BaseSaveTest):
+class PropertyValidateSucceeds(object):
+
+    def should_validate_document(self):
+        assert self.doc.validate.calls('()')
+
+
+class WhenDocumentHasNoId(
+    BaseSaveTest,
+    PropertyValidateSucceeds,
+    ):
 
     def setup(self):
         BaseSaveTest.setup(self)
 
         self.doc.save()
 
-    def should_validate_document(self):
-        assert self.doc.validate.calls('()')
+    def should_save_document_into_collection_with_safe_true(self):
+        assert self.doc.collection.calls('save', self.doc, safe=True)
 
-    def should_save_document_into_collection(self):
-        assert self.doc.collection.calls('save', self.doc)
+
+class WhenDocumentHasNoIdAndKeywordsAreSpecified(
+    BaseSaveTest,
+    PropertyValidateSucceeds,
+    ):
+
+    def setup(self):
+        BaseSaveTest.setup(self)
+        self.kwargs = {'foo': 1, 'bar': 2, 'safe': False}
+
+        self.doc.save(**self.kwargs)
+
+    def should_save_document_into_collection_and_honor_kwargs(self):
+        assert self.doc.collection.calls('save', self.doc, **self.kwargs)
+
 
 ####
 ## Document.reload

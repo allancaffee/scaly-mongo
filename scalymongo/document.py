@@ -14,7 +14,11 @@ from scalymongo.errors import (
     ModifyFailedError,
     UnsafeBehaviorError,
 )
-from scalymongo.helpers import is_update_modifier, value_or_result
+from scalymongo.helpers import (
+    ClassDefault,
+    is_update_modifier,
+    value_or_result,
+)
 from scalymongo.schema import (
     SchemaDocument,
     SchemaMetaclass,
@@ -67,20 +71,42 @@ class Document(SchemaDocument):
 
         default_values = {'uuid': uuid.UUID}
     """
+    safe_insert = True
+    """A :class:`bool` indicating whether :meth:`save` should default to safe insertion.
+
+    This defaults to ``True`` but may be overridden by subclasses.
+    """
 
     def __init__(self, *args, **kwargs):
         SchemaDocument.__init__(self, *args, **kwargs)
         for key, value in self.default_values.iteritems():
             self.setdefault(key, value_or_result(value))
 
-    def save(self):
+    def save(self, safe=ClassDefault, **kwargs):
+        """Save this document.
+
+        If this document has already been saved an :class:`UnsafeBehaviorError`
+        will be raised.  The document will be validated before saving.
+
+        :keyword safe: Corresponds to the `safe` keyword of the underlying
+            function.  If not specified this defaults to using the
+            :data:`safe_insert` attribute.  (Which in turn is set to ``True``
+            on the :class:`Document`.
+
+        All additional keyword arguments will be passed to
+        :meth:`pymongo.collection.Collection.save`.
+
+        """
         if '_id' in self:
             raise UnsafeBehaviorError(
                 'This document has already been saved once.'
                 ' Further alterations should use modify.')
 
+        if safe is ClassDefault:
+            safe = self.safe_insert
+
         self.validate()
-        self.collection.save(self)
+        self.collection.save(self, safe=safe, **kwargs)
 
     def reload(self):
         """Reload this document.
