@@ -80,7 +80,7 @@ class Document(SchemaDocument):
                 ' Further alterations should use modify.')
 
         self.validate()
-        self.collection.insert(self)
+        self.collection.save(self)
 
     def reload(self):
         """Reload this document.

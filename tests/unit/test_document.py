@@ -195,8 +195,8 @@ class WhenDocumentHasNoId(BaseSaveTest):
     def should_validate_document(self):
         assert self.doc.validate.calls('()')
 
-    def should_insert_document_into_collection(self):
-        assert self.doc.collection.calls('insert', self.doc)
+    def should_save_document_into_collection(self):
+        assert self.doc.collection.calls('save', self.doc)
 
 ####
 ## Document.reload
