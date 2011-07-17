@@ -47,12 +47,14 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
             structure={'a_1': str, 'a_2': dict},
             indexes=[Dingus('index_a')],
             required_fields=['a_2'],
+            default_values={'a_1': 'a_1_default'},
         )
         self.base_b = Dingus(
             'BaseB',
             structure={'b_1': str, 'b_2': dict},
             indexes=[Dingus('index_b')],
             required_fields=['b_2'],
+            default_values={'b_1': 'b_1_default'},
         )
         self.bases = [self.base_a, self.base_b]
         self.index = Dingus('index')
@@ -60,6 +62,7 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
             'structure': {'c_1': int, 'c_2': float},
             'indexes': [self.index],
             'required_fields': ['c_1', 'c_2'],
+            'default_values': {'c_1': 'c_1_default'},
         }
         SchemaMetaclass.__new__(SchemaMetaclass, self.name, self.bases, self.attrs)
 
@@ -79,6 +82,11 @@ class WhenSchemaMetaclassHasBaseClasses(BaseDescribeNewSchemaMetaclass):
                         self.base_b.indexes[0]],
             'shard_index': mod.find_shard_index(),
             '_conversions': mod.make_conversion_dict(),
+            'default_values': {
+                'a_1': 'a_1_default',
+                'b_1': 'b_1_default',
+                'c_1': 'c_1_default',
+            },
         }
 
 

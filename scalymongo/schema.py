@@ -28,6 +28,7 @@ class SchemaMetaclass(type):
         'structure': dict,
         'indexes': UpdatingList,
         'required_fields': set,
+        'default_values': dict,
     }
     "Map the merged base class attributes to their expected types."
 
