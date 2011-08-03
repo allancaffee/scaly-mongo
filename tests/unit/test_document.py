@@ -65,6 +65,9 @@ class WhenDocumentClassIsNotAbstract(BaseDocumentMetaclassNew):
     def should_add_to_concrete_classes(self):
         assert self.returned in DocumentMetaclass.concrete_classes
 
+    def should_set_abstract_to_false(self):
+        assert self.attrs['abstract'] is False
+
 
 class DescribeGetConcreteClasses(DingusTestCase(get_concrete_classes)):
 

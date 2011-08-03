@@ -28,7 +28,8 @@ class DocumentMetaclass(SchemaMetaclass):
 
     def __new__(cls, name, bases, attrs):
         rv = SchemaMetaclass.__new__(cls, name, bases, attrs)
-        if not attrs.get('abstract', False) and not attrs.get('connection'):
+        attrs['abstract'] = attrs.get('abstract', False)
+        if not attrs['abstract'] and not attrs.get('connection'):
             cls.concrete_classes.add(rv)
         return rv
 
