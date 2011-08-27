@@ -37,7 +37,7 @@ class DescribeConnectDocument(BaseConnectionTest):
         assert issubclass(self.returned, self.document)
 
     def should_set_connection_on_returned(self):
-        assert self.returned.connection == self.connection
+        assert self.returned.connection is self.connection
 
     def should_set_database_on_returned(self):
         assert self.returned.database == self.connection[
