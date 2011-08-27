@@ -509,9 +509,9 @@ class WhenPushAllingArrayContainingBadValue(object):
     def should_raise_validation_error(self):
         assert_raises_with_message(
             ValidationError,
-            "Cannot push value 1.1 onto array of <type 'int'>",
+            "Cannot push value 1.25 onto array of <type 'int'>",
             validate_update_modifier,
-            {'$pushAll': {'field': [1, 1.1]}},
+            {'$pushAll': {'field': [1, 1.25]}},
             {'field': [int]})
 
 
