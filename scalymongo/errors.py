@@ -12,3 +12,7 @@ class SchemaError(ValueError):
 
 class ValidationError(Exception):
     pass
+
+
+class ModifyFailedError(Exception):
+    pass

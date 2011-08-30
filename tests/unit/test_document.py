@@ -3,7 +3,7 @@ from dingus import DingusTestCase, Dingus, exception_raiser
 from nose.tools import assert_raises
 
 from scalymongo.document import *
-from scalymongo.errors import GlobalQueryException
+from scalymongo.errors import GlobalQueryException, ModifyFailedError
 import scalymongo.document as mod
 
 
@@ -336,6 +336,27 @@ class TestModifyWithExplicitQuerySpec(
         BaseModify.setup(self)
         self.query = {'blarg': Dingus('blarg')}
         self.my_doc.modify(self.update, query=self.query)
+
+
+class WhenFindAndModifyReturnsNone(
+    BaseModify,
+    ):
+
+    def setup(self):
+        BaseModify.setup(self)
+        self.query = {'blarg': Dingus('blarg')}
+        self.MyDoc.reload = Dingus('reload')
+        self.MyDoc.find_and_modify.return_value = None
+
+        assert_raises(
+            ModifyFailedError,
+            self.my_doc.modify,
+            self.update,
+            query=self.query,
+        )
+
+    def should_reload_model(self):
+        assert self.my_doc.reload.calls('()')
 
 
 ## Document.ensure_index ##

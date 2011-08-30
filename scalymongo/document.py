@@ -8,7 +8,11 @@ import functools
 
 from pymongo.errors import OperationFailure
 
-from scalymongo.errors import UnsafeBehaviorError, GlobalQueryException
+from scalymongo.errors import (
+    GlobalQueryException,
+    ModifyFailedError,
+    UnsafeBehaviorError,
+)
 from scalymongo.helpers import is_update_modifier, value_or_result
 from scalymongo.schema import (
     SchemaDocument,
@@ -91,6 +95,9 @@ class Document(SchemaDocument):
     def modify(self, update, query=None):
         """Modify this document using :meth:`find_and_modify`.
 
+        If the document could not be updated a
+        :class:`~scalymongo.errors.ModifyFailedError` is raised.
+
         :param update: Is an update modifier or replacement document to be
             be used for this
 
@@ -105,6 +112,13 @@ class Document(SchemaDocument):
             full_query.update(query)
         full_query['_id'] = self['_id']
         result = self.find_and_modify(full_query, update, new=True)
+        if result is None:
+            self.reload()
+            raise ModifyFailedError(
+                'Failed to update document.  The document was not found'
+                ' based on the criteria {0}.  Document was {1}.'.format(
+                query, self),
+            )
         # We have to clear the existing dictionary first in case the operation
         # included an `$unset` or replaced the entire document.
         self.clear()
