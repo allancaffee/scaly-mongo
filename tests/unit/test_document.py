@@ -695,6 +695,20 @@ class TestFindAndModifyAllowingGlobal(
             self.query, self.update, allow_global=True, **self.kwargs)
 
 
+class TestFindAndModifyCommandReturnsValueOfNone(
+    BaseFindAndModify,
+    PropertyFindAndModifyOperationFails,
+    PropertyAllowGlobalIsFalse,
+    ):
+
+    def setup(self):
+        BaseFindAndModify.setup(self)
+        self.MyDoc.database.command()['value'] = None
+
+        self.returned = self.MyDoc.find_and_modify(
+            self.query, self.update, **self.kwargs)
+
+
 ## Document.update ##
 
 class BaseUpdate(BaseDocumentSubclassTest):

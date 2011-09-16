@@ -209,6 +209,9 @@ class Document(SchemaDocument):
         except OperationFailure:
             return None
 
+        if returned['value'] is None:
+            return None
+
         return cls(returned['value'])
 
     @classmethod
