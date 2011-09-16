@@ -31,22 +31,16 @@ class TestEnsureIndex(BaseAcceptanceTest):
         cls.indexes = cls.connected_document.collection.index_information()
 
     def should_create_index_on_number(self):
-        assert self.indexes['number_1'] == {
-            'key': [('number', 1)],
-            'unique': False,
-            'v': 0,
-        }
+        index = self.indexes['number_1']
+        assert index['key'] == [('number', 1)]
+        assert index.get('unique', False) is False
 
     def should_create_unique_index_on_name(self):
-        assert self.indexes['name_1'] == {
-            'key': [('name', 1)],
-            'unique': True,
-            'v': 0,
-        }
+        index = self.indexes['name_1']
+        assert index['key'] == [('name', 1)]
+        assert index['unique'] is True
 
     def should_create_descending_ascending_index(self):
-        assert self.indexes['descending_-1_ascending_1'] == {
-            'key': [('descending', -1), ('ascending', 1)],
-            'unique': False,
-            'v': 0,
-        }
+        index = self.indexes['descending_-1_ascending_1']
+        assert index['key'] == [('descending', -1), ('ascending', 1)]
+        assert index.get('unique', False) is False
