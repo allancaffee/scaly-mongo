@@ -74,9 +74,6 @@ class ConversionDict(dict):
 
         If `conversion` is ``None`` then `value` is returned unchanged.
         """
-        if isinstance(value, dict) and not isinstance(value, ConversionDict):
-            return ConversionDict(value, conversion)
-
         if conversion is None:
             return value
 
