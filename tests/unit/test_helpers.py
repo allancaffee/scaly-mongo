@@ -119,7 +119,7 @@ class WhenGettingItemY(
         self.returned = self.conversion_dict['y']
 
 
-class WhenGettingItemY(
+class WhenGettingAttrY(
     BaseConversionDictTest,
     PropertyRetrievingY,
     ):
