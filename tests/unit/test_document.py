@@ -418,10 +418,7 @@ class BaseFindOne(BaseDocumentSubclassTest):
     def setup(self):
         BaseDocumentSubclassTest.setup(self)
         self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
-
-    def should_return_find_one_from_collection(self):
-        assert self.MyDoc.collection.calls('find_one').once()
-        assert self.returned == self.MyDoc.collection.find_one()
+        self.MyDoc.__init__ = Dingus('__init__', return_value=None)
 
 
 class BaseFindOneWithoutGlobalQuery(BaseFindOne):
@@ -430,7 +427,39 @@ class BaseFindOneWithoutGlobalQuery(BaseFindOne):
         assert self.MyDoc.check_query_sharding.calls('()', self.spec)
 
 
-class WhenFindingOneWithoutSpec(BaseFindOneWithoutGlobalQuery):
+class PropertyFindOneReturnsNone(object):
+
+    def should_return_None(self):
+        assert self.returned is None
+
+
+class PropertyFindOneReturnsNonNone(object):
+
+    def should_create_new_MyDoc_with_result(self):
+        assert self.MyDoc.__init__.calls(
+            '()', self.MyDoc.collection.find_one())
+
+    def should_return_new_MyDoc(self):
+        assert isinstance(self.returned, self.MyDoc)
+
+
+class WhenFindingOneReturnsNone(
+    BaseFindOne,
+    PropertyFindOneReturnsNone,
+):
+
+    def setup(self):
+        BaseFindOne.setup(self)
+        self.MyDoc.collection.find_one.return_value = None
+        self.spec = Dingus()
+
+        self.returned = self.MyDoc.find_one(self.spec)
+
+
+class WhenFindingOneWithoutSpec(
+    BaseFindOneWithoutGlobalQuery,
+    PropertyFindOneReturnsNonNone,
+):
 
     def setup(self):
         BaseFindOneWithoutGlobalQuery.setup(self)
@@ -439,11 +468,13 @@ class WhenFindingOneWithoutSpec(BaseFindOneWithoutGlobalQuery):
         self.returned = self.MyDoc.find_one()
 
     def should_find_one_on_collection(self):
-        assert self.MyDoc.collection.calls(
-            'find_one', None, as_class=self.MyDoc)
+        assert self.MyDoc.collection.calls('find_one', None)
 
 
-class WhenFindingOneWithSpec(BaseFindOneWithoutGlobalQuery):
+class WhenFindingOneWithSpec(
+    BaseFindOneWithoutGlobalQuery,
+    PropertyFindOneReturnsNonNone,
+):
 
     def setup(self):
         BaseFindOneWithoutGlobalQuery.setup(self)
@@ -452,11 +483,13 @@ class WhenFindingOneWithSpec(BaseFindOneWithoutGlobalQuery):
         self.returned = self.MyDoc.find_one(self.spec)
 
     def should_find_one_with_spec(self):
-        assert self.MyDoc.collection.calls(
-            'find_one', self.spec, as_class=self.MyDoc)
+        assert self.MyDoc.collection.calls('find_one', self.spec)
 
 
-class WhenFindingOneWithSpecAndKeywords(BaseFindOneWithoutGlobalQuery):
+class WhenFindingOneWithSpecAndKeywords(
+    BaseFindOneWithoutGlobalQuery,
+    PropertyFindOneReturnsNonNone,
+):
 
     def setup(self):
         BaseFindOneWithoutGlobalQuery.setup(self)
@@ -467,10 +500,13 @@ class WhenFindingOneWithSpecAndKeywords(BaseFindOneWithoutGlobalQuery):
 
     def should_find_one_with_spec(self):
         assert self.MyDoc.collection.calls(
-            'find_one', self.spec, as_class=self.MyDoc, **self.kwargs)
+            'find_one', self.spec, **self.kwargs)
 
 
-class WhenFindingOneAndAllowingGlobal(BaseFindOne):
+class WhenFindingOneAndAllowingGlobal(
+    BaseFindOne,
+    PropertyFindOneReturnsNonNone,
+):
 
     def setup(self):
         BaseFindOne.setup(self)
