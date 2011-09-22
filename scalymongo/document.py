@@ -8,6 +8,7 @@ import functools
 
 from pymongo.errors import OperationFailure
 
+from scalymongo.cursor import Cursor
 from scalymongo.errors import (
     GlobalQueryException,
     ModifyFailedError,
@@ -150,10 +151,11 @@ class Document(SchemaDocument):
         :param kwargs: (optional): Additional keyword arguments will be
           passed to :meth:`pymongo.collection.Collection.find_one`.
         """
-        kwargs['as_class'] = cls
         if not allow_global:
             cls.check_query_sharding(spec)
-        return cls.collection.find_one(spec, **kwargs)
+        result = cls.collection.find_one(spec, **kwargs)
+        if result is not None:
+            return cls(result)
 
     @classmethod
     def find(cls, spec=None, allow_global=False, *args, **kwargs):
@@ -164,10 +166,10 @@ class Document(SchemaDocument):
         ``dict`` instances.  All additional arguments are passed to the
         underlying method.
         """
-        kwargs['as_class'] = cls
         if not allow_global:
             cls.check_query_sharding(spec)
-        return cls.collection.find(spec, *args, **kwargs)
+        result = cls.collection.find(spec, *args, **kwargs)
+        return Cursor(result, cls)
 
     @classmethod
     def find_and_modify(cls, query={}, update=None,

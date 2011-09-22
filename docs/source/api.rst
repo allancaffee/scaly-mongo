@@ -7,6 +7,9 @@ API Documentation
 .. automodule:: scalymongo.document
     :members:
 
+.. automodule:: scalymongo.cursor
+    :members:
+
 .. automodule:: scalymongo.schema
     :members:
 
