@@ -523,10 +523,15 @@ class BaseFind(BaseDocumentSubclassTest):
     def setup(self):
         BaseDocumentSubclassTest.setup(self)
         self.MyDoc.check_query_sharding = Dingus('check_query_sharding')
+        self.old_Cursor = mod.Cursor
+        mod.Cursor = DeterministicDingus('Cursor')
 
-    def should_return_find_from_collection(self):
-        assert self.MyDoc.collection.calls('find').once()
-        assert self.returned == self.MyDoc.collection.find()
+    def teardown(self):
+        mod.Cursor = self.old_Cursor
+
+    def should_return_wrapped_Cursor(self):
+        assert self.returned is mod.Cursor(
+            self.MyDoc.collection.find(), self.MyDoc)
 
 
 class BaseFindWithoutGlobalQuery(BaseFind):
@@ -544,8 +549,7 @@ class WhenFindingWithoutSpec(BaseFindWithoutGlobalQuery):
         self.returned = self.MyDoc.find()
 
     def should_find_on_collection(self):
-        assert self.MyDoc.collection.calls(
-            'find', None, as_class=self.MyDoc)
+        assert self.MyDoc.collection.calls('find', None)
 
 
 class WhenFindingWithSpec(BaseFindWithoutGlobalQuery):
@@ -557,8 +561,7 @@ class WhenFindingWithSpec(BaseFindWithoutGlobalQuery):
         self.returned = self.MyDoc.find(self.spec)
 
     def should_find_with_spec(self):
-        assert self.MyDoc.collection.calls(
-            'find', self.spec, as_class=self.MyDoc)
+        assert self.MyDoc.collection.calls('find', self.spec)
 
 
 class WhenFindingWithSpecAndKeywords(BaseFindWithoutGlobalQuery):
@@ -571,8 +574,7 @@ class WhenFindingWithSpecAndKeywords(BaseFindWithoutGlobalQuery):
         self.returned = self.MyDoc.find(self.spec, **self.kwargs)
 
     def should_find_with_spec(self):
-        assert self.MyDoc.collection.calls(
-            'find', self.spec, as_class=self.MyDoc, **self.kwargs)
+        assert self.MyDoc.collection.calls('find', self.spec, **self.kwargs)
 
 
 class WhenFindingAndAllowingGlobal(BaseFind):
