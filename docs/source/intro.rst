@@ -49,8 +49,8 @@ Traceback (most recent call last):
   ...
 scalymongo.errors.GlobalQueryException: Some or all of the shard key was not specified.  Missing fields were title.
 
-What happended!?  Remember that we declared a shard key on the ``author`` and
-``title`` fields?  ScalyMongo noticed that we trying to query without having the
+What happened!?  Remember that we declared a shard key on the ``author`` and
+``title`` fields?  ScalyMongo noticed that we were trying to query without having the
 full shard key.  This means that the query might potentially have to hit *every*
 shard in our cluster to find the one document we were looking for.  That's
 probably not what we wanted to do, and it certainly wouldn't be something we
@@ -66,7 +66,7 @@ our query a bit so that it doesn't hit every shard.
 And sure enough that's our first post.  Of course sometimes we *really do* want
 to find something even if we don't have the full shard key.  Sometimes this is
 useful during development to look up documents from the interactive console.  We
-can just override ScalyMongo's recomendations and force the query anyway:
+can just override ScalyMongo's recommendations and force the query anyway:
 
 >>> conn.models.BlogPost.find_one({'author': 'Allan'}, allow_global=True)
 {u'_id': ObjectId('4deb90e41717953527000000'),

@@ -29,5 +29,5 @@ example below:
 
 
     connection = Connection()
-    for model in connections.models:
+    for model in connection.models:
         model.ensure_indexes()
