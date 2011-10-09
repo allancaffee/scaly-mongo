@@ -21,7 +21,7 @@ def is_update_modifier(doc):
 
 
 def value_or_result(potential):
-    """Return `potential` or it's return value.
+    """Return `potential` or its return value.
 
     If `potential` is callable then the result of calling it without arguments
     is returned instead.
