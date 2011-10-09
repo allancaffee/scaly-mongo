@@ -10,7 +10,16 @@ def parse_arguments():
 
     """
     parser = OptionParser()
-    parser.usage = '%prog MODULE ENDPOINT'
+    parser.usage = '%prog [options] MODULE ENDPOINT'
+    parser.add_option(
+        '--background', action='store_true',
+        help='create indexes as a non-blocking operation [default]',
+    )
+    parser.add_option(
+        '--no-background', action='store_false', dest='background',
+        help='disable background index creation',
+    )
+    parser.set_defaults(background=True)
 
     options, arguments = parser.parse_args()
 
@@ -29,12 +38,12 @@ def main():
     __import__(module_name)
 
     connection = Connection(endpoint)
-    ensure_indexes(connection)
+    ensure_indexes(connection, options)
 
 
-def ensure_indexes(connection):
+def ensure_indexes(connection, options):
     for model in connection.models:
-        model.ensure_indexes(background=True)
+        model.ensure_indexes(background=options.background)
 
 
 if __name__ == '__main__': # pragma: no cover
