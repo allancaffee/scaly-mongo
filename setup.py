@@ -17,10 +17,15 @@ setup(
     author='Allan Caffee',
     author_email='allan.caffee@gmail.com',
     license='BSD',
-    packages=['scalymongo'],
+    packages=['scalymongo', 'scalymongo.manage'],
     install_requires=['pymongo>=1.9'],
     test_suite='tests',
     long_description=read('README.rst'),
+    entry_points={
+      'console_scripts': [
+          'scalymongo-ensure-indexes = scalymongo.manage.ensure_indexes:main',
+      ],
+    },
     zip_safe=True,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
