@@ -30,10 +30,43 @@ automatically done during runtime for several reasons:
 
 .. _Indexing as a Background Operation: http://www.mongodb.org/display/DOCS/Indexing+as+a+Background+Operation
 
+
 So, if ScalyMongo doesn't automatically set up indexes, how does one go about
-creating indexes?  Projects using ScalyMongo should have an administrative
-script which generates the indexes for all applicable collections.  This script
-would look much like the example below:
+creating indexes?
+
+
+Creating Indexes with ``scalymongo-ensure-indexes``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. versionadded:: 0.1.4
+    ScalyMongo now comes with a utility script called
+    ``scalymongo-ensure-indexes`` to create indexes.
+
+This script requires two arguments:
+    * The name of the module containing your project's model classes.
+    * A MongoDB endpoint to connect to.
+
+For example if your models are defined in (or imported by) ``myproject.models``
+and your MongoDB server is running at ``mongo.example.com``, you can create the
+indexes described in your model by running:
+
+.. code-block:: sh
+
+    $ scalymongo-ensure-indexes myproject.models mongodb://mongo.example.com
+
+For details on additional options that are available for creating indexes
+please refer to the output of ``scalymongo-ensure-indexes --help``.
+
+.. note::
+    This administrative script should be run *before* deploying any code which
+    depends on the indexes.
+
+
+Creating Indexes with Earlier Versions of ScalyMongo
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Projects using versions of ScalyMongo prior to 0.1.4 can create indexes with a
+short script like the one presented below:
 
 .. code-block:: python
 
@@ -50,10 +83,3 @@ would look much like the example below:
 Notice that the script creates indexes in the background.  This prevents the
 operation from blocking other reads and writes on the collection, but also
 means that index creation will take longer.
-
-.. note::
-    This administrative script should be run *before* deploying any code which
-    depends on the indexes.
-
-In upcoming versions a general version of this script will be provided with
-ScalyMongo to simplify the process of index creation.
