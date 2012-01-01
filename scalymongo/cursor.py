@@ -30,6 +30,9 @@ class Cursor(object):
         """
         return self.__document_type(self.__wrapped_cursor.next())
 
+    def __iter__(self):
+        return self
+
     def clone(self):
         """Return a new wrapper :class:`Cursor`.
         """

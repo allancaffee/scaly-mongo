@@ -85,6 +85,23 @@ class WhenGettingNext(BaseCursorTestCase):
 
 ####
 ##
+## Cursor.__iter__
+##
+####
+
+class DescribeIter(BaseCursorTestCase):
+
+    def setup(self):
+        BaseCursorTestCase.setup(self)
+
+        self.returned = self.cursor.__iter__()
+
+    def should_return_wrapped_document(self):
+        assert self.returned is self.cursor
+
+
+####
+##
 ## Cursor.clone
 ##
 ####
