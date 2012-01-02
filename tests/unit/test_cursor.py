@@ -85,48 +85,87 @@ class WhenGettingNext(BaseCursorTestCase):
 
 ####
 ##
-## Cursor.clone
+## Cursor.*
 ##
 ####
 
-class WhenCloningCursor(BaseCursorTestCase):
+class BaseWrappedMethod(BaseCursorTestCase):
 
     module_mocks = ['Cursor']
+    additional_mocks = ['arg1', 'arg2', 'kwarg1', 'kwarg2']
 
     def setup(self):
         BaseCursorTestCase.setup(self)
         self.module.Cursor = DeterministicDingus('Cursor')
+        self.method = getattr(self.cursor, self.method_name)
+        self.wrapped_method = getattr(self.wrapped_cursor, self.method_name)
 
-        self.returned = self.cursor.clone()
+        self.returned = self.method(
+            self.arg1, self.arg2, kwarg1=self.kwarg1, kwarg2=self.kwarg2)
 
     def should_return_wrapped_cursor(self):
         assert self.returned is self.module.Cursor(
-            self.wrapped_cursor.clone(), self.document_type)
+            self.wrapped_method(), self.document_type)
+
+    def should_call_wrapped_method(self):
+        assert self.wrapped_method.calls(
+            '()', self.arg1, self.arg2, kwarg1=self.kwarg1, kwarg2=self.kwarg2)
 
 
-####
-##
-## Cursor.*
-##
-####
+class DescribeBatchSize(BaseWrappedMethod):
+
+    method_name = 'batch_size'
+
+
+class DescribeClone(BaseWrappedMethod):
+
+    method_name = 'clone'
+
+
+class DescribeHint(BaseWrappedMethod):
+
+    method_name = 'hint'
+
+
+class DescribeLimit(BaseWrappedMethod):
+
+    method_name = 'limit'
+
+
+class DescribeMaxScan(BaseWrappedMethod):
+
+    method_name = 'max_scan'
+
+
+class DescribeRewind(BaseWrappedMethod):
+
+    method_name = 'rewind'
+
+
+class DescribeSkip(BaseWrappedMethod):
+
+    method_name = 'skip'
+
+
+class DescribeSort(BaseWrappedMethod):
+
+    method_name = 'sort'
+
+
+class DescribeWhere(BaseWrappedMethod):
+
+    method_name = 'where'
+
 
 class WhenGettingOtherMethodAndAtts(BaseCursorTestCase):
 
     def should_return_cursor_attrs(self):
         attrs = [
             'alive',
-            'batch_size',
             'collection',
             'count',
             'distinct',
             'explain',
-            'hint',
-            'limit',
-            'max_scan',
-            'rewind',
-            'skip',
-            'sort',
-            'where',
         ]
         for attr in attrs:
             assert getattr(self.cursor, attr) \
