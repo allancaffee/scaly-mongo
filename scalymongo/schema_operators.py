@@ -1,6 +1,5 @@
 class OR(object):
-    """Specify that a value should be one of several types.
-    """
+    """Specify that a value should be one of several types."""
 
     def __init__(self, *args):
         self.valid_types = tuple(sorted(args))
@@ -24,6 +23,7 @@ class IS(object):
 
     This operator uses a ``set`` for fast checking so any values must be
     hashable.
+
     """
 
     def __init__(self, *args):

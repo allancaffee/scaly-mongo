@@ -3,7 +3,9 @@ Helpers
 =======
 
 Useful functions and classes that don't really fit elsewhere.
+
 """
+
 
 def is_update_modifier(doc):
     """Return true if and only if `doc` is an update modifier.
@@ -11,6 +13,7 @@ def is_update_modifier(doc):
     This function only checks the first key it finds.  `doc` is assumed to
     be either a valid update modifier or a replacement document.  The result of
     passing a bad modifier or document is undefined.
+
     """
     if not doc:
         return False
@@ -38,6 +41,7 @@ class ClassDefault(object):
     This is used as default value for keyword arguments so that a default can
     be set during class declaration, but the value can still be explicitly
     specified when the function is called.
+
     """
 
 
@@ -58,6 +62,7 @@ class ConversionDict(dict):
     :param conversions: is a dictionary containing conversions to be applied on
         lookup.  If no conversion is present in `conversions` the value is
         returned unchanged.
+
     """
 
     NONKEY_ATTRS = set(['_conversions'])
@@ -66,6 +71,7 @@ class ConversionDict(dict):
     Classes extending :class:`ConversionDict` should add the names of any
     attributes they wish to keep that should not be set into the underlying
     :class:`dict`.
+
     """
 
     def __init__(self, content, conversions):
@@ -82,6 +88,7 @@ class ConversionDict(dict):
         """Convert `value` using `conversion`.
 
         If `conversion` is ``None`` then `value` is returned unchanged.
+
         """
         if conversion is None:
             return value
@@ -104,6 +111,7 @@ class ConversionDict(dict):
         If `name` is a :class:`dict` then it will be wrapped in a new
         :class:`ConversionDict`.  This allows chained dot notation to reference
         items in embedded dictionaries.
+
         """
         if name in self:
             return self.__getitem__(name)
@@ -118,6 +126,7 @@ class ConversionDict(dict):
         :data:`NONKEY_ATTRS`.  Or some other attribute already set on either
         the instance or the class (which allows the tests to dingus out methods
         on instances).
+
         """
         if name in self.NONKEY_ATTRS or name in dir(self):
             object.__setattr__(self, name, value)
@@ -129,26 +138,25 @@ class ConversionDict(dict):
 
         The underlying :meth:`dict.iteritems` must be wrapped such that the
         values returned by this generator are converted to appropriate types.
+
         """
         for key, value in dict.iteritems(self):
             conversion = self.__get_conversion(key)
             yield key, self.__convert_value(value, conversion)
 
-
     def itervalues(self):
         """Iterate the values in this :class:`ConversionDict`.
 
         The values are converted to the appropriate type before returning.
+
         """
         for key, value in self.iteritems():
             yield value
 
     def items(self):
-        """Return a list of the items in this :class:`ConversionDict`.
-        """
+        """Return a list of the items in this :class:`ConversionDict`."""
         return [item for item in self.iteritems()]
 
     def values(self):
-        """Return a list of the values in this :class:`ConversionDict`.
-        """
+        """Return a list of the values in this :class:`ConversionDict`."""
         return [value for value in self.itervalues()]

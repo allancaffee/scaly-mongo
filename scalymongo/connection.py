@@ -1,6 +1,7 @@
 """
 Connection
 ==========
+
 """
 import warnings
 
@@ -13,11 +14,13 @@ class Connection(pymongo.Connection):
     """A connection to a MongoDB database.
 
     This is a wrapper for a :class:`pymongo.connection.Connection`.
+
     """
 
     def connect_document(self, document):
         """Connect a document by creating a new type and injecting the
         connection.
+
         """
         attrs = {
             'connection': self,
@@ -66,7 +69,6 @@ class DocumentProxy(object):
         return self.connection.connect_document(cls)
 
     def __iter__(self):
-        """A generator for all models registered on this connection.
-        """
+        """A generator for all models registered on this connection."""
         for value in self.registered.itervalues():
             yield self.connection.connect_document(value)

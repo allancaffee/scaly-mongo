@@ -27,6 +27,7 @@ class Cursor(object):
     This class is a thin wrapper which takes results returned by the underlying
     cursor and wraps them in the appropriate
     :class:`~scalymongo.document.Document` subclass.
+
     """
 
     def __init__(self, wrapped_cursor, document_type):
@@ -46,8 +47,7 @@ class Cursor(object):
         return self.__document_type(returned)
 
     def next(self):
-        """Return the next document for this cursor.
-        """
+        """Return the next document for this cursor."""
         return self.__document_type(self.__wrapped_cursor.next())
 
     def __iter__(self):
@@ -65,6 +65,5 @@ class Cursor(object):
     where = _make_cursor_wrapper_method('where')
 
     def __getattr__(self, attr):
-        """All other methods and properties are those of the wrapped cursor.
-        """
+        """All other methods and properties are those of the wrapped cursor."""
         return getattr(self.__wrapped_cursor, attr)

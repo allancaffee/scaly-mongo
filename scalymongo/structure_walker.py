@@ -3,6 +3,7 @@ Structure Walker
 ================
 
 A utility used to aid in structure validation.
+
 """
 from inspect import isclass
 
@@ -26,6 +27,7 @@ class StructureWalker(object):
 
         A :class:`ValidationError` is raised if any fields in `body` are
         not present in `structure`.
+
         """
         _check_for_unknown_fields(body, structure, path)
 
@@ -66,6 +68,7 @@ def _check_for_unknown_fields(body, structure, path):
 
     This only checks the first level of keys.  Any keys from :class:`dict`s in
     the `body`\ 's values will not be checked.
+
     """
     type_keys = tuple([key for key in structure if isclass(key)])
     existing_fields = set([key for key in body if not isclass(key)])
@@ -93,6 +96,7 @@ def _join(head, tail):
     """Join `head` and `tail` with a dot.
 
     If head is ``None`` only `tail` is returned.
+
     """
     if head is None:
         return tail

@@ -3,6 +3,7 @@ Document
 ========
 
 The base document models.
+
 """
 import functools
 
@@ -31,6 +32,7 @@ class DocumentMetaclass(SchemaMetaclass):
 
     This excludes classes created by
     :meth:`~scalymongo.connection.Connection.connect_document`.
+
     """
 
     concrete_classes = set()
@@ -56,6 +58,7 @@ class Document(SchemaDocument):
     class wraps many of the methods available on
     :class:`pymongo.collection.Collection` in order to return objects of the
     appropriate subclass.
+
     """
 
     __metaclass__ = DocumentMetaclass
@@ -64,17 +67,19 @@ class Document(SchemaDocument):
     """A dictionary mapping fields to default values.
 
     The values may either be static values or a function that returns a default
-    value.  For example to put a new :class:`~uuid.UUID` in the field `uuid` you
-    would use a default like:
+    value.  For example to put a new :class:`~uuid.UUID` in the field `uuid`
+    you would use a default like:
 
     .. code-block:: python
 
         default_values = {'uuid': uuid.UUID}
+
     """
     safe_insert = True
     """A :class:`bool` indicating whether :meth:`save` should default to safe insertion.
 
     This defaults to ``True`` but may be overridden by subclasses.
+
     """
 
     def __init__(self, *args, **kwargs):
@@ -113,6 +118,7 @@ class Document(SchemaDocument):
 
         This will make use of the shard key for sharded collections to avoid a
         global query.
+
         """
         spec = self.shard_key
         spec['_id'] = self['_id']
@@ -135,6 +141,7 @@ class Document(SchemaDocument):
             ``_id`` field and it's shard key fields (where applicable) are
             included in addition to any parameters specified in the
             `query`.
+
         """
         full_query = self.shard_key
         if query:
@@ -162,6 +169,7 @@ class Document(SchemaDocument):
         (re)building large indexes can make a database unusable for some time.
         Any additional `kwargs` are passed to
         :meth:`pymongo.collection.Collection.ensure_index`.
+
         """
         for index in cls.indexes:
             kwargs['unique'] = index.get('unique', False)
@@ -178,6 +186,7 @@ class Document(SchemaDocument):
 
         :param kwargs: (optional): Additional keyword arguments will be
           passed to :meth:`pymongo.collection.Collection.find_one`.
+
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -193,6 +202,7 @@ class Document(SchemaDocument):
         which returns document objects of the appropriate class instead of
         ``dict`` instances.  All additional arguments are passed to the
         underlying method.
+
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -224,6 +234,7 @@ class Document(SchemaDocument):
             supports can be passed here.
 
         .. _findAndModify: http://www.mongodb.org/display/DOCS/findAndModify+Command
+
         """
         if not allow_global:
             cls.check_query_sharding(query)
@@ -258,6 +269,7 @@ class Document(SchemaDocument):
             modifier.
         :keyword multi: update multiple documents or just the first (default
             ``False``).
+
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -272,6 +284,7 @@ class Document(SchemaDocument):
 
         Additional keywords are passed to
         :meth:`pymongo.collection.Collection.remove`.
+
         """
         if not allow_global:
             cls.check_query_sharding(spec)
@@ -284,6 +297,7 @@ class Document(SchemaDocument):
 
         :param document: is expected to be either a new document or an update
             modifier.
+
         """
         if is_update_modifier(document):
             validate_update_modifier(document, cls.structure)
@@ -297,6 +311,7 @@ class Document(SchemaDocument):
 
         If any shard keys are unspecified this will raise a
         :class:`GlobalQueryException`.
+
         """
         if cls.shard_index:
             keys = set(cls.shard_index['fields'])
