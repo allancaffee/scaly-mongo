@@ -5,7 +5,7 @@ class OR(object):
         self.valid_types = tuple(sorted(args))
 
     def evaluate(self, value):
-        """Determine if :param value: meets this operator's criteria."""
+        """Determine if `value` meets this operator's criteria."""
         return isinstance(value, self.valid_types)
 
     def __eq__(self, other):
@@ -21,7 +21,7 @@ class OR(object):
 class IS(object):
     """Specify that a value should one of several *exact values*.
 
-    This operator uses a ``set`` for fast checking so any values must be
+    This operator uses a :class:`set` for fast checking so any values must be
     hashable.
 
     """
@@ -30,7 +30,7 @@ class IS(object):
         self.valid_values = set(args)
 
     def evaluate(self, value):
-        """Determine if :param value: meets this operator's criteria."""
+        """Determine if `value` meets this operator's criteria."""
         return value in self.valid_values
 
     def __eq__(self, other):
