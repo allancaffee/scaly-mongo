@@ -123,7 +123,9 @@ class Document(SchemaDocument):
         """Modify this document using :meth:`find_and_modify`.
 
         If the document could not be updated a
-        :class:`~scalymongo.errors.ModifyFailedError` is raised.
+        :class:`~scalymongo.errors.ModifyFailedError` is raised.  This is
+        usually caused by the document not being found on the server (e.g. it
+        was deleted or does not match the specified `query`).
 
         :param update: Is an update modifier or replacement document to be
             be used for this
