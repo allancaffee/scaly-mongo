@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='scalymongo',
-    version='0.1.5',
+    version='0.1.6',
     description='A scaling-centric MongoDB object document mapper',
     keywords = 'mongo sharding db',
     url='https://github.com/allancaffee/scaly-mongo',
