@@ -77,3 +77,13 @@ class BlogPostTestCase(BaseAcceptanceTest):
         )
 
         assert self.is_document_up_to_date()
+
+    def when_pushing_valid_comment_should_pass_validation(self):
+        comment = {
+            'author': 'Bob',
+            'comment': 'Mongo is great!',
+            'rank': 0,
+        }
+        self.doc.modify({'$push': {'comments': comment}})
+
+        assert self.doc.comments == [comment]

@@ -245,7 +245,16 @@ def _make_single_value_array_modifier_validator(action_name):
                     action_name, repr(field_type)))
 
         array_type = field_type[0]
-        if not is_field_of_expected_type(value, array_type):
+        if isinstance(array_type, dict):
+            # It's an embedded document.
+            try:
+                validate_structure(value, array_type)
+            except ValidationError as ex:
+                raise ValidationError(
+                    'Cannot {0} value {1!r} onto array of {2!r}: {3}'.format(
+                        action_name, value, array_type, ex))
+
+        elif not is_field_of_expected_type(value, array_type):
             raise ValidationError(
                 'Cannot {0} value {1} onto array of {2}'.format(
                     action_name, repr(value), repr(array_type)))
