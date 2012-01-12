@@ -230,7 +230,7 @@ def _validate_field_modifier(modifier, field_type, value):
 def _validate_inc_modifier(field_type, value):
     if field_type not in [int, long, float]:
         raise ValidationError(
-            'Cannot increment non-numeric field of declared as {0}'.format(
+            'Cannot increment non-numeric field declared as {0}'.format(
                 repr(field_type)))
 
 

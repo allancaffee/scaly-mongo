@@ -441,7 +441,7 @@ class WhenIncrementingDatetimeField(object):
     def should_raise_validation_error(self):
         assert_raises_with_message(
             ValidationError,
-            "Cannot increment non-numeric field of declared as <type 'datetime.datetime'>",
+            "Cannot increment non-numeric field declared as <type 'datetime.datetime'>",
             validate_update_modifier,
             {'$inc': {'field': 1}},
             {'field': datetime.datetime})
