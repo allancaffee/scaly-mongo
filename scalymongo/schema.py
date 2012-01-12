@@ -143,8 +143,9 @@ def validate_single_field(path, value, expected_type):
     """
     if not is_field_of_expected_type(value, expected_type):
         raise ValidationError(
-            "Position {0!r} was declared to be {1}, but encountered value {2}"
-            .format(path, expected_type, value))
+            "Position {0!r} was declared to be {1!r},"
+            " but encountered value {2!r}".format(
+                path, expected_type, value))
 
 
 def is_field_of_expected_type(value, expected_type):
