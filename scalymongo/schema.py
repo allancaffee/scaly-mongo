@@ -137,7 +137,7 @@ def validate_structure(body, structure):
 def validate_single_field(path, value, expected_type):
     """Validate a single field's value.
 
-    This is the callback validator used by the :meth validate_structure: to
+    This is the callback validator used by the :func:`validate_structure` to
     check individual field values.
 
     """
