@@ -588,7 +588,7 @@ class WhenPullingFromArrayField(object):
             {'field': [int]})
 
 
-### $pull modifier ###
+### $pullAll modifier ###
 
 
 class WhenPullAllingFromArrayField(object):
