@@ -441,7 +441,7 @@ class WhenIncrementingDatetimeField(object):
     def should_raise_validation_error(self):
         assert_raises_with_message(
             ValidationError,
-            "Cannot increment non-numeric field of declared as <type 'datetime.datetime'>",
+            "Cannot increment non-numeric field declared as <type 'datetime.datetime'>",
             validate_update_modifier,
             {'$inc': {'field': 1}},
             {'field': datetime.datetime})
@@ -470,6 +470,29 @@ class WhenPushingValueOfIncorrectTypeOntoListField(object):
         assert_raises_with_message(
             ValidationError, "Cannot push value 1 onto array field of type float",
             validate_update_modifier, {'$push': {'field': 1}}, {'field': [float]})
+
+
+class WhenPushingOntoListOfEmbeddedDocuments(object):
+
+    def should_pass_validation(self):
+        validate_update_modifier(
+            {'$push': {'list_of_docs': {'a': 0, 'b': 'foo'}}},
+            {'list_of_docs': [{'a': int, 'b': basestring}]},
+        )
+
+
+class WhenPushingInvalidDocumentOntoListOfEmbeddedDocuments(object):
+
+    def should_raise_ValidationError(self):
+        assert_raises_with_message(
+            ValidationError,
+            "Cannot push value {'a': 'Not a number', 'b': 'foo'} onto array of"
+            " {'a': <type 'int'>, 'b': <type 'basestring'>}:"
+            " Position 'a' was declared to be <type 'int'>, but encountered value 'Not a number'",
+            validate_update_modifier,
+            {'$push': {'list_of_docs': {'a': 'Not a number', 'b': 'foo'}}},
+            {'list_of_docs': [{'a': int, 'b': basestring}]},
+        )
 
 
 ### $pushAll modifier ###
@@ -565,7 +588,7 @@ class WhenPullingFromArrayField(object):
             {'field': [int]})
 
 
-### $pull modifier ###
+### $pullAll modifier ###
 
 
 class WhenPullAllingFromArrayField(object):

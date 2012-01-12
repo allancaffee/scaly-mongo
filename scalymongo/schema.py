@@ -137,14 +137,15 @@ def validate_structure(body, structure):
 def validate_single_field(path, value, expected_type):
     """Validate a single field's value.
 
-    This is the callback validator used by the :meth validate_structure: to
+    This is the callback validator used by the :func:`validate_structure` to
     check individual field values.
 
     """
     if not is_field_of_expected_type(value, expected_type):
         raise ValidationError(
-            "Position {0!r} was declared to be {1}, but encountered value {2}"
-            .format(path, expected_type, value))
+            "Position {0!r} was declared to be {1!r},"
+            " but encountered value {2!r}".format(
+                path, expected_type, value))
 
 
 def is_field_of_expected_type(value, expected_type):
@@ -229,7 +230,7 @@ def _validate_field_modifier(modifier, field_type, value):
 def _validate_inc_modifier(field_type, value):
     if field_type not in [int, long, float]:
         raise ValidationError(
-            'Cannot increment non-numeric field of declared as {0}'.format(
+            'Cannot increment non-numeric field declared as {0}'.format(
                 repr(field_type)))
 
 
@@ -244,7 +245,16 @@ def _make_single_value_array_modifier_validator(action_name):
                     action_name, repr(field_type)))
 
         array_type = field_type[0]
-        if not is_field_of_expected_type(value, array_type):
+        if isinstance(array_type, dict):
+            # It's an embedded document.
+            try:
+                validate_structure(value, array_type)
+            except ValidationError as ex:
+                raise ValidationError(
+                    'Cannot {0} value {1!r} onto array of {2!r}: {3}'.format(
+                        action_name, value, array_type, ex))
+
+        elif not is_field_of_expected_type(value, array_type):
             raise ValidationError(
                 'Cannot {0} value {1} onto array of {2}'.format(
                     action_name, repr(value), repr(array_type)))
