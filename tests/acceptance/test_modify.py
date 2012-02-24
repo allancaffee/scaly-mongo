@@ -12,7 +12,10 @@ class BlogPostModifyExample(Document):
     __collection__ = __name__
     __database__ = 'test'
     structure = {
-        'author': basestring,
+        'author': {
+            'name': basestring,
+            'email_address': basestring,
+        },
         'title': basestring,
         'body': basestring,
         'views': int,
@@ -28,7 +31,10 @@ class BlogPostModifyExample(Document):
 
 
 EXAMPLE_POST = {
-    'author': 'Alice',
+    'author': {
+        'name': 'Alice',
+        'email_address': 'alice@example.com',
+    },
     'title': 'Writing Scalable Services with Python and MongoDB',
     'body': 'Use ScalyMongo!',
 }
@@ -62,20 +68,21 @@ class BlogPostTestCase(BaseAcceptanceTest):
         assert_raises(
             ModifyFailedError,
             self.doc.modify,
-            {'$set': {'author': 'Bob'}},
-            {'author': 'Not Alice'},
+            {'$set': {'author.name': 'Bob'}},
+            {'author.name': 'Not Alice'},
         )
 
         # The doc should not have been altered.
-        assert self.doc.author == 'Alice'
+        assert self.doc.author['name'] == 'Alice'
         assert self.is_document_up_to_date()
 
     def when_precondition_passes_should_update_field(self):
         self.doc.modify(
             {'$set': {'views': 15}},
-            {'author': 'Alice'},
+            {'author.name': 'Alice'},
         )
 
+        assert self.doc['views'] == 15
         assert self.is_document_up_to_date()
 
     def when_pushing_valid_comment_should_pass_validation(self):

@@ -7,7 +7,7 @@ The core schema validation logic.
 """
 
 from scalymongo.errors import SchemaError, ValidationError
-from scalymongo.helpers import ConversionDict
+from scalymongo.helpers import ConversionDict, dot_expand_dict
 from scalymongo.structure_walker import StructureWalker
 
 
@@ -183,7 +183,7 @@ def validate_single_modifier(modifier, args, structure):
 
     """
     if modifier == '$set':
-        return validate_structure(args, structure)
+        return validate_structure(dot_expand_dict(args), structure)
     if modifier == '$unset':
         # TODO: Do not allow unsetting required fields or shard_key fields.
         return

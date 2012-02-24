@@ -227,3 +227,29 @@ class WhenGettingValues(
         BaseConversionDictTest.setup(self)
 
         self.returned = self.conversion_dict.values()
+
+
+####
+##
+## dot_expand_dict
+##
+####
+
+class DescribeDotExpandDict(object):
+
+    def when_dict_already_flat_should_return_input(self):
+        assert dot_expand_dict({'a': 1, 'b': 2}) == {'a': 1, 'b': 2}
+
+    def when_dict_contains_a_single_key_should_expand(self):
+        assert dot_expand_dict({'a.b.c': 1}) == {'a': {'b': {'c': 1}}}
+
+    def when_dict_contains_overlapping_keys_should_expand_in_shared_dict(self):
+        assert dot_expand_dict({'a.b.c': 1, 'a.b.d': 2, 'd': 3}) == {
+            'a': {
+                'b': {
+                    'c': 1,
+                    'd': 2,
+                },
+            },
+            'd': 3,
+        }

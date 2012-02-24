@@ -160,3 +160,50 @@ class ConversionDict(dict):
     def values(self):
         """Return a list of the values in this :class:`ConversionDict`."""
         return [value for value in self.itervalues()]
+
+
+def dot_expand_dict(body):
+    """Create nested dictionary structure from every key in ``body``.
+
+    Process passed in ``body``, creating an additional dictionary level
+    for each dot in every key.
+
+    >>> dot_expand_dict({'a.b.c': 1, 'a.b.d': 2, 'd': 3})
+    {'a': {'b': {'c': 1, 'd': 2}}, 'd': 2}
+
+    This is used internally to expand update modifiers for easier recursion.
+
+    ..note ::
+        Only top level keys with dots are expanded; embedded dictionaries will not
+        be touched. For example:
+
+        >>> dot_expand_dict({'a': {'b.c.d': 1}})
+        {'a': {'b.c.d': 1}}
+
+    ..note ::
+        When `body` contains conflicting specifications for values the result
+        of this function is undefined. For example ``{'a.b': 1, 'a': 2}`` is
+        not valid because ``a.b`` implies that `a` is a dictionary, but `a` is
+        also explicitly specified as an ``int``. This is not valid at all in
+        MongoDB so it is not handled here.
+
+        The same applies to values like ``{'a.b': 1, 'a': {'c': 2}}`` where one
+        pair specifies a full value for a key `a` and another specifies a
+        partial value.
+
+    """
+    expanded = {}
+    for key, value in body.iteritems():
+        _expand_and_set_key(key, value, expanded)
+    return expanded
+
+
+def _expand_and_set_key(key, value, current_dict):
+    """Split dots in `key` and sets it in `current_dict`."""
+    if '.' not in key:
+        current_dict.setdefault(key, {})
+        current_dict[key] = value
+        return
+
+    head, tail = key.split('.', 1)
+    _expand_and_set_key(tail, value, current_dict.setdefault(head, {}))
