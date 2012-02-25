@@ -49,11 +49,21 @@ class StructureWalker(object):
     def _recurse_or_validate_field(self, value, sub_structure, path):
         if isinstance(sub_structure, list):
             assert len(sub_structure) == 1
-            # Validate each value in the list against the specified content
-            # type.
-            for i, value in enumerate(value):
-                self._recurse_or_validate_field(
-                    value, sub_structure[0], _join(path, i))
+            if isinstance(value, dict):
+                # If the structure is a dict this is fine so long as all of the
+                # keys are integers or the positional operator (`$`). This
+                # happens with the $set update modifier since we expand
+                # {'foo.0.bar': 1} to {'foo': {'0': {'bar': 1}}}
+                for key, value in value.iteritems():
+                    assert key.isdigit() or key == '$'
+                    self._recurse_or_validate_field(
+                        value, sub_structure[0], _join(path, key))
+            else:
+                # Validate each value in the list against the specified content
+                # type.
+                for i, value in enumerate(value):
+                    self._recurse_or_validate_field(
+                        value, sub_structure[0], _join(path, i))
             return
 
         if isinstance(sub_structure, dict):

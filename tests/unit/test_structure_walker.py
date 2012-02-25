@@ -63,6 +63,36 @@ class WhenWalkingStructureWithListValue(BaseStructureWalker):
         assert self.field_validator.calls('()', 'x.1', self.values[1], self.type)
 
 
+class WhenWalkingStructureWithListValueAndDictWithIntegerKeys(
+        BaseStructureWalker):
+
+    @classmethod
+    def setup_class(self):
+        BaseStructureWalker.setup_class()
+        self.values = {
+            '0': Dingus('value_0'),
+            '1': Dingus('value_1'),
+            '$': Dingus('value_$'),
+        }
+        self.type = Dingus('type')
+        self.body = {'x': self.values}
+        self.structure = {'x': [self.type]}
+        self.structure_walker.walk_dict(self.body, self.structure)
+
+    def should_visit_x_0(self):
+        assert self.field_validator.calls(
+            '()', 'x.0', self.values['0'], self.type)
+
+    def should_visit_x_1(self):
+        assert self.field_validator.calls(
+            '()', 'x.1', self.values['1'], self.type)
+
+    def should_visit_x_positional(self):
+        assert self.field_validator.calls(
+            '()', 'x.$', self.values['$'], self.type)
+
+
+
 class WhenWalkingStructureWithListOfDocuments(BaseStructureWalker):
 
     @classmethod

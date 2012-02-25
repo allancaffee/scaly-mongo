@@ -94,3 +94,5 @@ class BlogPostTestCase(BaseAcceptanceTest):
         self.doc.modify({'$push': {'comments': comment}})
 
         assert self.doc.comments == [comment]
+        self.doc.modify({'$set': {'comments.0.rank': 1}})
+        assert self.doc.comments[0]['rank'] == 1
