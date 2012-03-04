@@ -169,7 +169,7 @@ def dot_expand_dict(body):
     for each dot in every key.
 
     >>> dot_expand_dict({'a.b.c': 1, 'a.b.d': 2, 'd': 3})
-    {'a': {'b': {'c': 1, 'd': 2}}, 'd': 2}
+    {'a': {'b': {'c': 1, 'd': 2}}, 'd': 3}
 
     This is used internally to expand update modifiers for easier recursion.
 
