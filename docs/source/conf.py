@@ -23,7 +23,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'ScalyMongo'
 copyright = u'2011, Allan Caffee'
-version = '0.1.7'
+version = '0.1.8'
 release = version
 
 exclude_patterns = []
