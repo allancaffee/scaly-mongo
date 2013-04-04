@@ -5,15 +5,15 @@ Connection
 """
 import warnings
 
-import pymongo
+from pymongo import MongoClient
 
 from scalymongo.document import get_concrete_classes
 
 
-class Connection(pymongo.Connection):
+class Connection(MongoClient):
     """A connection to a MongoDB database.
 
-    This is a wrapper for a :class:`pymongo.connection.Connection`.
+    This is a wrapper for a :class:`pymongo.mongo_client.MongoClient`.
 
     """
 

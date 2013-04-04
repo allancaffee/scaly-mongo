@@ -8,7 +8,7 @@ import scalymongo.connection as mod
 class DescribeConnectionClass(object):
 
     def should_extend_pymongo_connection(self):
-        assert issubclass(Connection, mod.pymongo.Connection)
+        assert issubclass(Connection, mod.MongoClient)
 
 
 class BaseConnectionTest(DingusTestCase(Connection)):
