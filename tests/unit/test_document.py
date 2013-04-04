@@ -7,8 +7,7 @@ from scalymongo.errors import GlobalQueryException, ModifyFailedError
 import scalymongo.document as mod
 
 
-class BaseDocumentMetaclassNew(
-    DingusTestCase(DocumentMetaclass)):
+class BaseDocumentMetaclassNew(DingusTestCase(DocumentMetaclass)):
 
     def setup(self):
         super(BaseDocumentMetaclassNew, self).setup()
@@ -16,6 +15,7 @@ class BaseDocumentMetaclassNew(
         self.bases = Dingus()
         self.attrs = {}
         mod.SchemaMetaclass.__new__ = Dingus()
+        mod.warn = Dingus()
 
     def should_create_new_document_class(self):
         assert mod.SchemaMetaclass.__new__.calls(
@@ -23,6 +23,26 @@ class BaseDocumentMetaclassNew(
 
     def should_return_new_class(self):
         assert self.returned == mod.SchemaMetaclass.__new__()
+
+
+class WhenDocumentClassUsesSafeInsert(BaseDocumentMetaclassNew):
+
+    def setup(self):
+        BaseDocumentMetaclassNew.setup(self)
+        self.attrs['safe_insert'] = False
+
+        self.returned = DocumentMetaclass.__new__(
+            DocumentMetaclass, self.name,
+            self.bases, self.attrs)
+
+    def should_print_depecation_warning(self):
+        assert mod.warn.calls(
+            '()',
+            ("safe_insert is deprecated. Use the write_concern_override "
+                "instead."),
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
 
 class WhenDocumentClassIsAbstract(BaseDocumentMetaclassNew):
@@ -115,6 +135,21 @@ class WhenInitializingDocumentSubclassWithoutDefaults(object):
 
     def should_create_empty_document(self):
         assert self.my_doc == {}
+
+
+class WhenInitializingDocumentSubclassOverridingWriteConcern(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {'foo': int}
+            write_concern_override = {'w': 0}
+
+        self.MyDoc = MyDoc
+        self.MyDoc.collection = Dingus('collection')
+        self.my_doc = self.MyDoc()
+
+    def should_set_collection_write_concern(self):
+        assert self.my_doc.collection.write_concern == {'w': 0}
 
 
 class BaseDocumentSubclassWithDefaultsTest(object):
