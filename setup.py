@@ -10,7 +10,7 @@ def read(fname):
 
 setup(
     name='scalymongo',
-    version='0.1.8',
+    version='0.2.0',
     description='A scaling-centric MongoDB object document mapper',
     keywords = 'mongo sharding db',
     url='https://github.com/allancaffee/scaly-mongo',
@@ -18,7 +18,7 @@ setup(
     author_email='allan.caffee@gmail.com',
     license='BSD',
     packages=['scalymongo', 'scalymongo.manage'],
-    install_requires=['pymongo>=1.9'],
+    install_requires=['pymongo>=2.4'],
     test_suite='tests',
     long_description=read('README.rst'),
     entry_points={
