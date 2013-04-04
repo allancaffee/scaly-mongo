@@ -7,8 +7,6 @@ The base document models.
 """
 from warnings import warn
 
-import functools
-
 from pymongo.errors import OperationFailure
 
 from scalymongo.cursor import Cursor
