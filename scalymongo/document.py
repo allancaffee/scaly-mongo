@@ -215,7 +215,7 @@ class Document(SchemaDocument):
         return Cursor(result, cls)
 
     @classmethod
-    def find_and_modify(cls, query={}, update=None,
+    def find_and_modify(cls, query=ClassDefault, update=None,
                         allow_global=False, **kwargs):
         """Find and atomically update a single document.
 
@@ -241,6 +241,9 @@ class Document(SchemaDocument):
         .. _findAndModify: http://www.mongodb.org/display/DOCS/findAndModify+Command
 
         """
+        if query is ClassDefault:
+            query = {}
+
         if not allow_global:
             cls.check_query_sharding(query)
 
