@@ -100,16 +100,11 @@ class Document(SchemaDocument):
         if self.write_concern_override is not None:
             self.collection.write_concern = self.write_concern_override
 
-    def save(self, safe=ClassDefault, **kwargs):
+    def save(self, **kwargs):
         """Save this document.
 
         If this document has already been saved an :class:`UnsafeBehaviorError`
         will be raised.  The document will be validated before saving.
-
-        :keyword safe: Corresponds to the `safe` keyword of the underlying
-            function.  If not specified this defaults to using the
-            :data:`safe_insert` attribute.  (Which in turn is set to ``True``
-            on the :class:`Document`.
 
         All additional keyword arguments will be passed to
         :meth:`pymongo.collection.Collection.save`.
@@ -121,7 +116,7 @@ class Document(SchemaDocument):
                 ' Further alterations should use modify.')
 
         self.validate()
-        self.collection.save(self, safe=safe, **kwargs)
+        self.collection.save(self, **kwargs)
 
     def reload(self):
         """Reload this document.

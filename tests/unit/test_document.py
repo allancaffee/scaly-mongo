@@ -237,8 +237,8 @@ class WhenDocumentHasNoId(
 
         self.doc.save()
 
-    def should_save_document_into_collection_with_safe_true(self):
-        assert self.doc.collection.calls('save', self.doc, safe=True)
+    def should_save_document_into_collection(self):
+        assert self.doc.collection.calls('save', self.doc)
 
 
 class WhenDocumentHasNoIdAndKeywordsAreSpecified(
@@ -248,7 +248,7 @@ class WhenDocumentHasNoIdAndKeywordsAreSpecified(
 
     def setup(self):
         BaseSaveTest.setup(self)
-        self.kwargs = {'foo': 1, 'bar': 2, 'safe': False}
+        self.kwargs = {'foo': 1, 'bar': 2, 'w': 0}
 
         self.doc.save(**self.kwargs)
 
@@ -943,7 +943,7 @@ class TestRemoveWithAllowGlobalFalseAndKWArgs(
 
     def setup(self):
         BaseRemove.setup(self)
-        self.kwargs = dict(safe=True, w=3, j=True)
+        self.kwargs = dict(w=3, j=True)
         self.returned = self.MyDoc.remove(
             self.spec, allow_global=True, **self.kwargs)
 
@@ -956,7 +956,7 @@ class TestRemoveWithAllowGlobalTrueAndKWArgs(
 
     def setup(self):
         BaseRemove.setup(self)
-        self.kwargs = dict(safe=True, w=3, j=True)
+        self.kwargs = dict(w=3, j=True)
         self.returned = self.MyDoc.remove(
             self.spec, allow_global=True, **self.kwargs)
 
