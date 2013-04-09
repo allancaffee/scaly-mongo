@@ -5,7 +5,7 @@ Document
 The base document models.
 
 """
-import functools
+from warnings import warn
 
 from pymongo.errors import OperationFailure
 
@@ -37,11 +37,18 @@ class DocumentMetaclass(SchemaMetaclass):
 
     concrete_classes = set()
 
-    def __new__(cls, name, bases, attrs):
-        rv = SchemaMetaclass.__new__(cls, name, bases, attrs)
+    def __new__(mcs, name, bases, attrs):
+        rv = SchemaMetaclass.__new__(mcs, name, bases, attrs)
         attrs['abstract'] = attrs.get('abstract', False)
         if not attrs['abstract'] and not attrs.get('connection'):
-            cls.concrete_classes.add(rv)
+            mcs.concrete_classes.add(rv)
+        if attrs.get('safe_insert') is not None:
+            warn(
+                ("safe_insert is deprecated. Use the write_concern_override "
+                 "instead."),
+                DeprecationWarning,
+                stacklevel=2,
+            )
         return rv
 
 
@@ -64,7 +71,7 @@ class Document(SchemaDocument):
     __metaclass__ = DocumentMetaclass
     abstract = True
     default_values = {}
-    """A dictionary mapping fields to default values.
+    """A :class:`dict` mapping fields to default values.
 
     The values may either be static values or a function that returns a default
     value.  For example to put a new :class:`~uuid.UUID` in the field `uuid`
@@ -75,10 +82,12 @@ class Document(SchemaDocument):
         default_values = {'uuid': uuid.UUID}
 
     """
-    safe_insert = True
-    """A :class:`bool` indicating whether :meth:`save` should default to safe insertion.
+    write_concern_override = None
+    """A :class:`dict` overriding the default write_concern for all instances.
 
-    This defaults to ``True`` but may be overridden by subclasses.
+    If not overridden, the default from :class:`pymongo.collection.Collection`
+    is used (w=1). Otherwise this will override the default write_concern for
+    all instances of the collection.
 
     """
 
@@ -86,17 +95,14 @@ class Document(SchemaDocument):
         SchemaDocument.__init__(self, *args, **kwargs)
         for key, value in self.default_values.iteritems():
             self.setdefault(key, value_or_result(value))
+        if self.write_concern_override is not None:
+            self.collection.write_concern = self.write_concern_override
 
-    def save(self, safe=ClassDefault, **kwargs):
+    def save(self, **kwargs):
         """Save this document.
 
         If this document has already been saved an :class:`UnsafeBehaviorError`
         will be raised.  The document will be validated before saving.
-
-        :keyword safe: Corresponds to the `safe` keyword of the underlying
-            function.  If not specified this defaults to using the
-            :data:`safe_insert` attribute.  (Which in turn is set to ``True``
-            on the :class:`Document`.
 
         All additional keyword arguments will be passed to
         :meth:`pymongo.collection.Collection.save`.
@@ -107,11 +113,8 @@ class Document(SchemaDocument):
                 'This document has already been saved once.'
                 ' Further alterations should use modify.')
 
-        if safe is ClassDefault:
-            safe = self.safe_insert
-
         self.validate()
-        self.collection.save(self, safe=safe, **kwargs)
+        self.collection.save(self, **kwargs)
 
     def reload(self):
         """Reload this document.
@@ -210,7 +213,7 @@ class Document(SchemaDocument):
         return Cursor(result, cls)
 
     @classmethod
-    def find_and_modify(cls, query={}, update=None,
+    def find_and_modify(cls, query=ClassDefault, update=None,
                         allow_global=False, **kwargs):
         """Find and atomically update a single document.
 
@@ -236,6 +239,9 @@ class Document(SchemaDocument):
         .. _findAndModify: http://www.mongodb.org/display/DOCS/findAndModify+Command
 
         """
+        if query is ClassDefault:
+            query = {}
+
         if not allow_global:
             cls.check_query_sharding(query)
 

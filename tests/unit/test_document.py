@@ -7,8 +7,7 @@ from scalymongo.errors import GlobalQueryException, ModifyFailedError
 import scalymongo.document as mod
 
 
-class BaseDocumentMetaclassNew(
-    DingusTestCase(DocumentMetaclass)):
+class BaseDocumentMetaclassNew(DingusTestCase(DocumentMetaclass)):
 
     def setup(self):
         super(BaseDocumentMetaclassNew, self).setup()
@@ -16,6 +15,7 @@ class BaseDocumentMetaclassNew(
         self.bases = Dingus()
         self.attrs = {}
         mod.SchemaMetaclass.__new__ = Dingus()
+        mod.warn = Dingus()
 
     def should_create_new_document_class(self):
         assert mod.SchemaMetaclass.__new__.calls(
@@ -23,6 +23,26 @@ class BaseDocumentMetaclassNew(
 
     def should_return_new_class(self):
         assert self.returned == mod.SchemaMetaclass.__new__()
+
+
+class WhenDocumentClassUsesSafeInsert(BaseDocumentMetaclassNew):
+
+    def setup(self):
+        BaseDocumentMetaclassNew.setup(self)
+        self.attrs['safe_insert'] = False
+
+        self.returned = DocumentMetaclass.__new__(
+            DocumentMetaclass, self.name,
+            self.bases, self.attrs)
+
+    def should_print_depecation_warning(self):
+        assert mod.warn.calls(
+            '()',
+            ("safe_insert is deprecated. Use the write_concern_override "
+                "instead."),
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
 
 class WhenDocumentClassIsAbstract(BaseDocumentMetaclassNew):
@@ -117,6 +137,21 @@ class WhenInitializingDocumentSubclassWithoutDefaults(object):
         assert self.my_doc == {}
 
 
+class WhenInitializingDocumentSubclassOverridingWriteConcern(object):
+
+    def setup(self):
+        class MyDoc(Document):
+            structure = {'foo': int}
+            write_concern_override = {'w': 0}
+
+        self.MyDoc = MyDoc
+        self.MyDoc.collection = Dingus('collection')
+        self.my_doc = self.MyDoc()
+
+    def should_set_collection_write_concern(self):
+        assert self.my_doc.collection.write_concern == {'w': 0}
+
+
 class BaseDocumentSubclassWithDefaultsTest(object):
 
     def setup(self):
@@ -202,8 +237,8 @@ class WhenDocumentHasNoId(
 
         self.doc.save()
 
-    def should_save_document_into_collection_with_safe_true(self):
-        assert self.doc.collection.calls('save', self.doc, safe=True)
+    def should_save_document_into_collection(self):
+        assert self.doc.collection.calls('save', self.doc)
 
 
 class WhenDocumentHasNoIdAndKeywordsAreSpecified(
@@ -213,7 +248,7 @@ class WhenDocumentHasNoIdAndKeywordsAreSpecified(
 
     def setup(self):
         BaseSaveTest.setup(self)
-        self.kwargs = {'foo': 1, 'bar': 2, 'safe': False}
+        self.kwargs = {'foo': 1, 'bar': 2, 'w': 0}
 
         self.doc.save(**self.kwargs)
 
@@ -908,7 +943,7 @@ class TestRemoveWithAllowGlobalFalseAndKWArgs(
 
     def setup(self):
         BaseRemove.setup(self)
-        self.kwargs = dict(safe=True, w=3, j=True)
+        self.kwargs = dict(w=3, j=True)
         self.returned = self.MyDoc.remove(
             self.spec, allow_global=True, **self.kwargs)
 
@@ -921,7 +956,7 @@ class TestRemoveWithAllowGlobalTrueAndKWArgs(
 
     def setup(self):
         BaseRemove.setup(self)
-        self.kwargs = dict(safe=True, w=3, j=True)
+        self.kwargs = dict(w=3, j=True)
         self.returned = self.MyDoc.remove(
             self.spec, allow_global=True, **self.kwargs)
 

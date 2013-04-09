@@ -13,6 +13,7 @@ class User(Document):
 
     __database__ = 'test'
     __collection__ = 'users'
+    write_concern_override = {'w': 0}
 
 
 class BaseSaveTest(BaseAcceptanceTest):
@@ -23,6 +24,9 @@ class BaseSaveTest(BaseAcceptanceTest):
         cls.doc = cls.connection.models.User()
         cls.doc['name'] = 'Alice'
         cls.doc['age'] = 32
+
+    def should_have_non_default_write_concern(self):
+        assert self.doc.collection.write_concern == {'w': 0}
 
 
 class TestSave(BaseSaveTest):
@@ -40,7 +44,7 @@ class TestSave(BaseSaveTest):
 
 
 class TestDoubleSave(BaseSaveTest):
-    
+
     @classmethod
     def setup_class(cls):
         BaseSaveTest.setup_class()
